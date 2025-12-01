@@ -1,0 +1,120 @@
+{
+  "editor.bracketPairColorization.independentColorPoolPerBracketType": true,
+	// Controls whether bracket pair colorization is enabled or not. Use 'workbench.colorCustomizations' to override the bracket highlight colors.
+	"editor.bracketPairColorization.enabled": true,
+	// Controls whether the editor should render indent guides.
+	"editor.guides.indentation": true,
+	// Controls whether bracket pair guides are enabled or not.
+	//  - true: Enables bracket pair guides.
+	//  - active: Enables bracket pair guides only for the active bracket pair.
+	//  - false: Disables bracket pair guides.
+	"editor.guides.bracketPairs": "active",
+	// Controls whether horizontal bracket pair guides are enabled or not.
+	//  - true: Enables horizontal guides as addition to vertical bracket pair guides.
+	//  - active: Enables horizontal guides only for the active bracket pair.
+	//  - false: Disables horizontal bracket pair guides.
+	"editor.guides.bracketPairsHorizontal": "active",
+	// Controls whether the editor should highlight the active indent guide.
+	"editor.guides.highlightActiveIndentation": true,
+	// Controls whether bracket pair guides are enabled or not.
+	"editor.guides.highlightActiveBracketPair": true,
+	// Defines the bracket symbols that increase or decrease the indentation.
+	"editor.language.brackets": [
+		["[", "]"],
+		["(", ")"],
+		["{", "}"]
+	],
+	// Defines the bracket pairs that are colorized by their nesting level if bracket pair colorization is enabled.
+	"editor.language.colorizedBracketPairs": [
+		["[", "]"],
+		["(", ")"],
+		["{", "}"]
+	],
+
+	"editor.mouseWheelScrollSensitivity": 3,
+	"editor.smoothScrolling": true,
+
+	"workbench.colorCustomizations": {
+		// bracket character colors
+		"editorBracketHighlight.foreground1": "#f51384", // red
+		"editorBracketHighlight.foreground2": "#fac928", // orange-yellow
+		"editorBracketHighlight.foreground3": "#00e74d", // green
+		"editorBracketHighlight.foreground4": "#057aff", // blue
+		"editorBracketHighlight.foreground5": "#c122e9", // violet
+		"editorBracketHighlight.foreground6": "#19f9d8", // cyan
+
+		// bracket guide line background colors
+		"editorBracketPairGuide.background1": "#f513849E", // red
+		"editorBracketPairGuide.background2": "#fac9289E", // orange-yellow
+		"editorBracketPairGuide.background3": "#00e74d9E", // green
+		"editorBracketPairGuide.background4": "#057aff9E", // blue
+		"editorBracketPairGuide.background5": "#c122e99E", // violet
+		"editorBracketPairGuide.background6": "#19f9d89E", // cyan
+
+		// active bracket guide lines (when cursor is inside)
+		"editorBracketPairGuide.activeBackground1": "#F513849E", // red
+		"editorBracketPairGuide.activeBackground2": "#FAC9289E", // orange-yellow
+		"editorBracketPairGuide.activeBackground3": "#00E74D9E", // green
+		"editorBracketPairGuide.activeBackground4": "#057AFF9E", // blue
+		"editorBracketPairGuide.activeBackground5": "#C122E99E", // violet
+		"editorBracketPairGuide.activeBackground6": "#19F9D89E"  // cyan
+	},
+	"editor.renderWhitespace": "all",
+
+	"editor.acceptSuggestionOnCommitCharacter": false,
+	"editor.acceptSuggestionOnEnter": "off",
+	"files.associations": {
+		"functional": "cpp",
+		"iostream": "cpp",
+		"ostream": "cpp",
+		"array": "cpp",
+		"atomic": "cpp",
+		"bit": "cpp",
+		"cctype": "cpp",
+		"charconv": "cpp",
+		"clocale": "cpp",
+		"cmath": "cpp",
+		"compare": "cpp",
+		"concepts": "cpp",
+		"cstdarg": "cpp",
+		"cstddef": "cpp",
+		"cstdint": "cpp",
+		"cstdio": "cpp",
+		"cstdlib": "cpp",
+		"ctime": "cpp",
+		"cwchar": "cpp",
+		"cwctype": "cpp",
+		"deque": "cpp",
+		"map": "cpp",
+		"set": "cpp",
+		"string": "cpp",
+		"unordered_map": "cpp",
+		"vector": "cpp",
+		"exception": "cpp",
+		"algorithm": "cpp",
+		"iterator": "cpp",
+		"memory": "cpp",
+		"memory_resource": "cpp",
+		"numeric": "cpp",
+		"optional": "cpp",
+		"random": "cpp",
+		"string_view": "cpp",
+		"system_error": "cpp",
+		"tuple": "cpp",
+		"type_traits": "cpp",
+		"utility": "cpp",
+		"format": "cpp",
+		"initializer_list": "cpp",
+		"iosfwd": "cpp",
+		"istream": "cpp",
+		"limits": "cpp",
+		"new": "cpp",
+		"numbers": "cpp",
+		"span": "cpp",
+		"stdexcept": "cpp",
+		"streambuf": "cpp",
+		"text_encoding": "cpp",
+		"typeinfo": "cpp",
+		"variant": "cpp"
+	}
+}
