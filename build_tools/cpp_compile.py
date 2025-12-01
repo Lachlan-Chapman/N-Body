@@ -20,6 +20,7 @@ class CppCompiler:
 
 	INCLUDE: list[str] = [
 		f"-I{Directory.INCLUDE_DIRECTORY}",
+		"-I/usr/local/cuda/include",
 	]
 
 	LIBS: list[str] = []

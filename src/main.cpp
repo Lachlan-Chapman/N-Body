@@ -2,10 +2,16 @@
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <cuda_runtime.h>
+#include <cuda_gl_interop.h>
+#include <device_launch_parameters.h>
 
 #include <iostream>
 
+
 #include "cube.hpp"
+
+void runDeformCube(float *data, float time, size_t bufferSize);
 
 int main(int argc, char** argv) {
 	if(!glfwInit()) {
@@ -13,12 +19,13 @@ int main(int argc, char** argv) {
 		return -1;
 	}
 
-	GLFWwindow *window = glfwCreateWindow(800, 600, "OpenGL Context", nullptr, nullptr);\
+	GLFWwindow *window = glfwCreateWindow(800, 600, "OpenGL Context", nullptr, nullptr);
 	if(!window) {
 		std::cerr << "Failed to create window\n";
 		glfwTerminate();
 		return -1;
 	}
+	glfwSetInputMode(window, GLFW_STICKY_KEYS, GLFW_TRUE);
 
 	glfwMakeContextCurrent(window);
 	if(glewInit() != GLEW_OK) {
@@ -59,6 +66,13 @@ int main(int argc, char** argv) {
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), cubeVertices, GL_STATIC_DRAW);
 
+		cudaGraphicsResource *cuda_vbo_resource;
+		cudaGraphicsGLRegisterBuffer( //we say to cuda that this buffer belongs to OpenGL but you can write to it
+			&cuda_vbo_resource,
+			VBO,
+			cudaGraphicsMapFlagsWriteDiscard
+		);
+
 		//EBO
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cubeIndices), cubeIndices, GL_STATIC_DRAW);
@@ -84,6 +98,7 @@ int main(int argc, char** argv) {
 			6 * sizeof(float),
 			(void*)(3 * sizeof(float)) //start at offset 3. so from [3]
 		);
+		glEnableVertexAttribArray(1); //tell that this item is to be read as color
 
 		glBindVertexArray(0);
 		glEnable(GL_DEPTH_TEST);
@@ -91,6 +106,10 @@ int main(int argc, char** argv) {
 
 		//rendering loop
 		while(!glfwWindowShouldClose(window)) {
+			if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+				glfwSetWindowShouldClose(window, true);
+			}
+
 			float time = glfwGetTime();
 
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); //clears the color and depth buffer
@@ -106,6 +125,28 @@ int main(int argc, char** argv) {
 			GLuint mvpLocation = glGetUniformLocation(shaderProgram, "uMVP"); //finds the mat4 declared in the vertex shader
 			glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, &mvp[0][0]);
 
+			glBindBuffer(GL_ARRAY_BUFFER, VBO);
+			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(cubeVertices), cubeVertices); //reset data as the kernel is destructive overwritting the buffer data leading to a collpase of values to 0
+
+			size_t bufferSize;
+			float *dptr;
+			cudaGraphicsMapResources(1, &cuda_vbo_resource);
+			cudaGraphicsResourceGetMappedPointer(
+				(void**)&dptr,
+				&bufferSize,
+				cuda_vbo_resource
+			);
+
+			runDeformCube(dptr, time, bufferSize);
+			cudaDeviceSynchronize();
+			cudaError_t err = cudaGetLastError();
+			if(err != cudaSuccess) {
+				std::cerr << "*** Cuda Error: " << cudaGetErrorString(err) << "***\n";
+			}
+
+			cudaGraphicsUnmapResources(1, &cuda_vbo_resource); //give it back to OpenGL
+
+
 			//draw the cube
 			glBindVertexArray(VAO);
 			glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
@@ -115,6 +156,17 @@ int main(int argc, char** argv) {
 		}
 	/* cube rendering section END */
 
+	//clean up after exiting
+	cudaGraphicsUnregisterResource(cuda_vbo_resource);
+	glDeleteVertexArrays(1, &VAO);
+	glDeleteVertexArrays(1, &VBO);
+	glDeleteVertexArrays(1, &EBO);
+
+	glDeleteProgram(shaderProgram);
+	glfwDestroyWindow(window);
+	glfwTerminate();
+	
+	cudaDeviceReset();
 
 	return 0;
 }
