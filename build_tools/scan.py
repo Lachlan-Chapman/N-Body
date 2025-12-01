@@ -19,7 +19,6 @@ class Scanner:
 		for src, obj in stale_cpp:
 			unique[src] = (src, obj) #use dictionary to store only 1 instance of (src, obj) pair
 		stale_cpp[:] = list(unique.values()) #allow inplace overwrite
-		print(f"CPP Files to compile: {stale_cpp}")
 
 
 		stale_cu.extend(cls._staleCu())

@@ -12,7 +12,6 @@ class Linker:
 		"-lcudart"
 	]
 	FLAGS: list[str] = []
-	PROGRAM_NAME: str = "app"
 	
 	@classmethod
 	def link(cls, object_files: list[Path]) -> bool:
@@ -20,22 +19,21 @@ class Linker:
 			print("++ No object files — skipping link ++")
 			return True
 
-		print(f"** Linking -> [{Directory.BUILD_DIRECTORY / cls.PROGRAM_NAME}] **")
+		print(f"** Linking -> [{Directory.BUILD_DIRECTORY / Directory.PROGRAM_NAME}] **")
 
 		cmd = [
 			cls.CXX,
 			*map(str, object_files),
-			"-o", str(Directory.BUILD_DIRECTORY / cls.PROGRAM_NAME),
+			"-o", str(Directory.BUILD_DIRECTORY / Directory.PROGRAM_NAME),
 			*cls.FLAGS,
 			*cls.LIB_DIRS,
 			*cls.LIBS,
 		]
 
-		try:
-			subprocess.run(cmd, check=True)
-		except subprocess.CalledProcessError:
+		link_process = subprocess.run(cmd, check=True)
+		if link_process.returncode != 0:
 			print("!! Linking Failed !!")
-			return False
-
-		print(f"** Linking Complete -> [{Directory.BUILD_DIRECTORY / cls.PROGRAM_NAME}] **")
+			print(proc.stdout)
+			print(proc.stderr)
+			return false
 		return True

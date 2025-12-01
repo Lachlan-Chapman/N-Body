@@ -6,39 +6,37 @@ from build_tools.directory import Directory
 
 class CuCompiler:
 	CXX: str = "nvcc"
-	LIBS: list[str] = []
+	THREAD_COUNT: int = 0
+
 	FLAGS: list[str] = [
-		"--std",
-		"c++20",
+		"--std=c++20",
 		"-arch=sm_89"
 	]
+
 	HOST_FLAGS: list[str] = [
 		"--std=c++20"
 	]
-	INCLUDES: list[str] = [f"-I{Directory.INCLUDE_DIRECTORY}"]
-	THREAD_COUNT: int = 0 #0 means use max threads of the system
+
+	INCLUDES: list[str] = [
+		f"-I{Directory.INCLUDE_DIRECTORY}"
+	]
+
+	LIBS: list[str] = []
 
 	@classmethod
 	def compileListST(cls, files: list[tuple[Path, Path]]) -> bool:
 		for src, obj in files:
-			print(f"-- Compiling Cuda C (ST): {src} -> {obj} --")
-
-			try:
-				cls._compileFile(src, obj)
-			except subprocess.CalledProcessError:
+			print(f"-- Compiling CUDA (ST): {src} -> {obj} --")
+			if not cls._compileFile(src, obj):
 				print(f"!~ Compilation Failed: {src} ~!")
 				return False
-
 		return True
 
 	@classmethod
 	def compileListMT(cls, files: list[tuple[Path, Path]]) -> bool:
-		thread_count: int = os.cpu_count() or 1
+		thread_count: int = cls.THREAD_COUNT or (os.cpu_count() or 1)
 
-		if cls.THREAD_COUNT != 0:
-			thread_count = cls.THREAD_COUNT
-
-		print(f"-- Compiling Cuda C (MT | {thread_count} threads) --")
+		print(f"-- Compiling CUDA (MT | {thread_count} threads) --")
 
 		with ThreadPoolExecutor(max_workers=thread_count) as pool:
 			futures = {
@@ -49,12 +47,10 @@ class CuCompiler:
 			for fut in as_completed(futures):
 				src, obj = futures[fut]
 
-				try:
-					fut.result()
-				except subprocess.CalledProcessError:
+				if not fut.result():
 					print(f"!~ Compilation Failed: {src} ~!")
 
-					# cancel all other futures
+					# cancel remaining tasks
 					for f in futures:
 						f.cancel()
 
@@ -63,13 +59,22 @@ class CuCompiler:
 		return True
 
 	@classmethod
-	def _compileFile(cls, src: Path, obj: Path) -> None:
+	def _compileFile(cls, src: Path, obj: Path) -> bool:
 		cmd: list[str] = [
 			cls.CXX,
 			"-c", str(src),
 			"-o", str(obj),
 			*cls.FLAGS,
 			*cls.HOST_FLAGS,
+			*cls.INCLUDES,
 			*cls.LIBS,
 		]
-		subprocess.run(cmd, check=True)
+
+		proc = subprocess.run(cmd, capture_output=True, text=True)
+
+		if proc.returncode != 0:
+			print(proc.stdout)
+			print(proc.stderr)
+			return False
+
+		return True

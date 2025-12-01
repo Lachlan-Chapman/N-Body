@@ -6,7 +6,7 @@ from build_tools.directory import Directory
 
 class CppCompiler:
 	CXX: str = "g++"
-	THREAD_COUNT: int = 0  #0 = use all system threads
+	THREAD_COUNT: int = 0  #0 = use all system threads else use this number for threads
 
 	FLAGS: list[str] = [
 		"-std=c++20",
@@ -22,19 +22,15 @@ class CppCompiler:
 		f"-I{Directory.INCLUDE_DIRECTORY}",
 	]
 
-	LIBS: list[str] = []  #good for later use if we start to use openGL
+	LIBS: list[str] = []
 
 	@classmethod
 	def compileListST(cls, files: list[tuple[Path, Path]]) -> bool:
 		for src, obj in files:
 			print(f"-- Compiling C++ (ST): {src} -> {obj} --")
-
-			try:
-				cls._compileFile(src, obj)
-			except subprocess.CalledProcessError:
+			if not cls._compileFile(src, obj):
 				print(f"!~ Compilation Failed: {src} ~!")
 				return False
-
 		return True
 
 	@classmethod
@@ -52,11 +48,11 @@ class CppCompiler:
 			for fut in as_completed(futures):
 				src, obj = futures[fut]
 
-				try:
-					fut.result()
-				except subprocess.CalledProcessError:
+				#result() returns True/False instead of throwing to stop vscode thinking the program has failed (failing subprocess is okay)
+				if not fut.result():
 					print(f"!~ Compilation Failed: {src} ~!")
 
+					#cancel all other tasks if one of them fails
 					for f in futures:
 						f.cancel()
 
@@ -65,7 +61,7 @@ class CppCompiler:
 		return True
 
 	@classmethod
-	def _compileFile(cls, src: Path, obj: Path) -> None:
+	def _compileFile(cls, src: Path, obj: Path) -> bool:
 		cmd = [
 			cls.CXX,
 			"-c", str(src),
@@ -75,4 +71,11 @@ class CppCompiler:
 			*cls.LIBS,
 		]
 
-		subprocess.run(cmd, check=True)
+		proc = subprocess.run(cmd, capture_output=True, text=True)
+
+		if proc.returncode != 0:
+			print(proc.stdout)
+			print(proc.stderr)
+			return False
+
+		return True

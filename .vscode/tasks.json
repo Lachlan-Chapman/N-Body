@@ -5,7 +5,6 @@
 			"label": "Build Task",
 			"type": "shell",
 			"command": "python3 build.py",
-			"continueOnError": true,
 			"problemMatcher": []
 		},
 	]
