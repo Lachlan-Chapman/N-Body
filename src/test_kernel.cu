@@ -6,5 +6,5 @@ __global__ void testKernel() {
 
 extern "C" void runTestKernel() { //ensures no name mangling when compiling
 	testKernel<<<1, 8>>>();
-	cudaDeviceSynchroniz();
+	cudaDeviceSynchronize();
 }

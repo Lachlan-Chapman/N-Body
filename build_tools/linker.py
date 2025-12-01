@@ -9,7 +9,7 @@ class Linker:
 	]
 
 	LIBS: list[str] = [
-		"-lcudart"
+		"-lcudart", "-lglfw", "-lGLEW", "-lGL", "-lX11", "-lXrandr", "-lXi", "-lXxf86vm", "-lXcursor", "-ldl", "-lpthread"
 	]
 	FLAGS: list[str] = []
 	
