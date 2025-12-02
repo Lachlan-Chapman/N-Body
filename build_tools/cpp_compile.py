@@ -14,8 +14,8 @@ class CppCompiler:
 		"-MP",
 		"-g",
 		"-O0",
-		"-Wall",
-		"-Wextra",
+		#"-Wall",
+		#"-Wextra",
 	]
 
 	INCLUDE: list[str] = [

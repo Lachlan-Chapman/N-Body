@@ -33,31 +33,32 @@
 
 	"editor.mouseWheelScrollSensitivity": 3,
 	"editor.smoothScrolling": true,
+	"editor.matchBrackets": "always",
 
 	"workbench.colorCustomizations": {
 		// bracket character colors
-		"editorBracketHighlight.foreground1": "#f51384", // red
-		"editorBracketHighlight.foreground2": "#fac928", // orange-yellow
-		"editorBracketHighlight.foreground3": "#00e74d", // green
-		"editorBracketHighlight.foreground4": "#057aff", // blue
-		"editorBracketHighlight.foreground5": "#c122e9", // violet
-		"editorBracketHighlight.foreground6": "#19f9d8", // cyan
+		"editorBracketHighlight.foreground1": "#FFA500", // orange
+		"editorBracketHighlight.foreground2": "#FFFF00", // yellow
+		"editorBracketHighlight.foreground3": "#00FF00", // green
+		"editorBracketHighlight.foreground4": "#00FFFF", // cyan
+		"editorBracketHighlight.foreground5": "#0000FF", // blue
+		"editorBracketHighlight.foreground6": "#8000FF", // purple
 
 		// bracket guide line background colors
-		"editorBracketPairGuide.background1": "#f513849E", // red
-		"editorBracketPairGuide.background2": "#fac9289E", // orange-yellow
-		"editorBracketPairGuide.background3": "#00e74d9E", // green
-		"editorBracketPairGuide.background4": "#057aff9E", // blue
-		"editorBracketPairGuide.background5": "#c122e99E", // violet
-		"editorBracketPairGuide.background6": "#19f9d89E", // cyan
+		"editorBracketPairGuide.background1": "#FFA50060",
+		"editorBracketPairGuide.background2": "#FFFF0060",
+		"editorBracketPairGuide.background3": "#00FF0060",
+		"editorBracketPairGuide.background4": "#00FFFF60",
+		"editorBracketPairGuide.background5": "#0000FF60",
+		"editorBracketPairGuide.background6": "#8000FF60",
 
-		// active bracket guide lines (when cursor is inside)
-		"editorBracketPairGuide.activeBackground1": "#F513849E", // red
-		"editorBracketPairGuide.activeBackground2": "#FAC9289E", // orange-yellow
-		"editorBracketPairGuide.activeBackground3": "#00E74D9E", // green
-		"editorBracketPairGuide.activeBackground4": "#057AFF9E", // blue
-		"editorBracketPairGuide.activeBackground5": "#C122E99E", // violet
-		"editorBracketPairGuide.activeBackground6": "#19F9D89E"  // cyan
+		// active bracket guide lines
+		"editorBracketPairGuide.activeBackground1": "#FFA500A0",
+		"editorBracketPairGuide.activeBackground2": "#FFFF00A0",
+		"editorBracketPairGuide.activeBackground3": "#00FF00A0",
+		"editorBracketPairGuide.activeBackground4": "#00FFFFA0",
+		"editorBracketPairGuide.activeBackground5": "#0000FFA0",
+		"editorBracketPairGuide.activeBackground6": "#8000FFA0"
 	},
 	"editor.renderWhitespace": "all",
 

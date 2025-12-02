@@ -1,5 +1,4 @@
-object/main.o: src/main.cpp include/graphics/open_gl_helper.hpp \
- include/GLAD/glad.h include/KHR/khrplatform.h \
+object/cuda_functions.o: src/graphics/cuda_functions.cpp \
  include/graphics/cuda_helper.hpp /usr/local/cuda/include/cuda_runtime.h \
  /usr/local/cuda/include/crt/host_config.h \
  /usr/local/cuda/include/builtin_types.h \
@@ -16,12 +15,7 @@ object/main.o: src/main.cpp include/graphics/open_gl_helper.hpp \
  /usr/local/cuda/include/driver_functions.h \
  /usr/local/cuda/include/vector_functions.h \
  /usr/local/cuda/include/vector_functions.hpp \
- /usr/local/cuda/include/cuda_gl_interop.h include/GLAD/types.hpp \
- include/shapes/sphere.hpp \
- /usr/local/cuda/include/device_launch_parameters.h
-include/graphics/open_gl_helper.hpp:
-include/GLAD/glad.h:
-include/KHR/khrplatform.h:
+ /usr/local/cuda/include/cuda_gl_interop.h include/GLAD/types.hpp
 include/graphics/cuda_helper.hpp:
 /usr/local/cuda/include/cuda_runtime.h:
 /usr/local/cuda/include/crt/host_config.h:
@@ -41,5 +35,3 @@ include/graphics/cuda_helper.hpp:
 /usr/local/cuda/include/vector_functions.hpp:
 /usr/local/cuda/include/cuda_gl_interop.h:
 include/GLAD/types.hpp:
-include/shapes/sphere.hpp:
-/usr/local/cuda/include/device_launch_parameters.h:

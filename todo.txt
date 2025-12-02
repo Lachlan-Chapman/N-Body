@@ -1,0 +1,12 @@
+so in order to get spheres rendering
+we need sphere mesh VBO data + VAO + EBO
+two levels of LOD, create ico sphere mesh
+
+we need sphere instances
+we need VBOs for position, raddii, accel, veloc
+
+we need create kernel to write position VBO
+
+
+
+

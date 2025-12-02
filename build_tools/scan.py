@@ -12,6 +12,8 @@ class Scanner:
 		stale_cpp: list[tuple[Path, Path]] = []
 		stale_cu: list[tuple[Path, Path]] = []
 
+		stale_cpp.extend(cls._staleC())
+		stale_cpp.extend(cls._modifiedDependenciesC())
 		stale_cpp.extend(cls._staleCpp()) #.cpp files without an .o file OR .o is older than the .cpp file
 		stale_cpp.extend(cls._modifiedDependenciesCpp()) #.cpp files with newer .hpp files than the .o file
 		
@@ -25,6 +27,43 @@ class Scanner:
 		stale_cu.extend(cls._modifiedDependenciesCu())
 
 		return stale_cpp, stale_cu
+
+	@classmethod
+	def _staleC(cls) -> list[tuple[Path, Path]]:
+		stale: list[tuple[Path, Path]] = []
+
+		for src in Directory.SRC_DIRECTORY.rglob("*.c"): #r in rglob means recursive so itll search subfolders
+			obj = Directory.OBJECT_DIRECTORY / (src.stem + ".o")
+
+			if not obj.exists(): #no respective object file clearly needs compiling
+				stale.append((src, obj))
+				continue
+
+			if src.stat().st_mtime > obj.stat().st_mtime: #cpp has updated later than object file was created
+				stale.append((src, obj))
+				continue
+
+		return stale
+
+	@classmethod
+	def _modifiedDependenciesC(cls) -> list[tuple[Path, Path]]:
+		stale: list[tuple[Path, Path]] = []
+		for src in Directory.SRC_DIRECTORY.rglob("*.c"):
+			obj = Directory.OBJECT_DIRECTORY / (src.stem + ".o")
+			dep = Directory.OBJECT_DIRECTORY / (src.stem + ".d")
+
+			#if the dependecy file doesnt exist, its the responsibility elsewhere to find and create them
+			if not obj.exists() or not dep.exists(): #no respective object file clearly needs compiling
+				continue
+
+			dependencies: list[Path] = cls._parseDependencyFiles(dep) #all the depended on files for this o file
+			obj_mtime: float = obj.stat().st_mtime
+
+			for header_path in dependencies:
+				if header_path.exists() and header_path.stat().st_mtime > obj_mtime: #re compile files with changes to the included headers
+					stale.append((src, obj))
+					break
+		return stale
 
 	#gets the cpp files needed for compilation based on IF .o is missing or .cpp is modified
 	@classmethod

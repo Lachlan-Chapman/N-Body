@@ -9,7 +9,9 @@ class Linker:
 	]
 
 	LIBS: list[str] = [
-		"-lcudart", "-lglfw", "-lGLEW", "-lGL", "-lX11", "-lXrandr", "-lXi", "-lXxf86vm", "-lXcursor", "-ldl", "-lpthread"
+		"-lcudart", "-lglfw", "-lGL", #cuda, glfw and OpenGL
+		"-lX11", "-lXrandr", "-lXi", "-lXxf86vm", "-lXcursor", #needed for linux x11 to link glfw
+		"-ldl", "-lpthread" #dyamic loaders
 	]
 	FLAGS: list[str] = []
 	
@@ -30,10 +32,9 @@ class Linker:
 			*cls.LIBS,
 		]
 
-		link_process = subprocess.run(cmd, check=True)
+		link_process = subprocess.run(cmd)
 		if link_process.returncode != 0:
 			print("!! Linking Failed !!")
-			print(proc.stdout)
-			print(proc.stderr)
-			return false
-		return True
+			print(link_process.stdout)
+			print(link_process.stderr)
+			return False

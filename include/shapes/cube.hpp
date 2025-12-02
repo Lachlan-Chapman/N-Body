@@ -33,7 +33,6 @@ unsigned int cubeIndices[] = {
 //vertex shader runs for each vertex, it reads attributes in the VBO and can change them and pass on new data to the rasteriser
 //rasteriser is a fixed function hardware stage that converts the triangles into pixels or fragments. so it interpolates per vertex attribute across the triangle
 //fragment shader runs for each of these frags and outputs a final color
-//screen buffer
 
 const char* vertexShaderSrc = R"(
 #version 330 core
