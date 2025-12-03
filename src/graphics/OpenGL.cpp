@@ -127,7 +127,10 @@ namespace OpenGL {
 			return nullptr;
 		}
 
-		glfwSetInputMode(window, GLFW_STICKY_KEYS, GLFW_TRUE);
+		glfwSetInputMode(window, GLFW_STICKY_KEYS, GLFW_TRUE); //allow keys
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); //fix cursor
+		glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE); //allow mouse delta input
+
 		glfwMakeContextCurrent(window); //set the context bound to this window
 
 		if(!gladLoadGL()) {
@@ -188,5 +191,11 @@ namespace OpenGL {
 		GLuint vao_handle;
 		glGenVertexArrays(p_count, &vao_handle);
 		return vao_handle;
+	}
+
+	GLuint mallocEBO(unsigned int p_count) {
+		GLuint ebo_handle;
+		glGenBuffers(p_count, &ebo_handle);
+		return ebo_handle;
 	}
 }

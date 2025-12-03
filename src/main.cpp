@@ -34,7 +34,7 @@ int main(int argc, char** argv) {
 	int vbo_size = sizeof(float) * 3 * vertex_count;
 	GLuint vbo_handle = OpenGL::mallocVBO(vbo_size, GL_STATIC_DRAW); //read only for vertex data
 	
-	//vao setup
+	//object data setup
 	GLuint vao_handle = OpenGL::mallocVAO(1);
 	glBindVertexArray(vao_handle); //bind to this vao that are we going to define the setup in the vbo setup
 	
@@ -50,6 +50,11 @@ int main(int argc, char** argv) {
 		(void*)0 //no offset
 	);
 
+	//create edges
+	GLuint ebo_handle = OpenGL::mallocEBO(1);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_handle);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Primitive::octahedronEdge), Primitive::octahedronEdge, GL_STATIC_DRAW);
+
 	std::string vert_shader = OpenGL::loadShader("shaders/vertex.vert");
 	std::string frag_shader = OpenGL::loadShader("shaders/white.frag");
 	if(vert_shader.empty() || frag_shader.empty()) { return 1; }
@@ -63,42 +68,88 @@ int main(int argc, char** argv) {
 
 
 	camera _cam(
-		glm::vec3(0.0, 2.0, 3.0),
+		glm::vec3(0.0, 0.0, 3.0),
 		glm::radians(90.0f),
 		16.0f/9.0f,
 		0.1f,
 		100.0f
 	);
 
-	_cam.lookAt(
-		glm::vec3(0.0f, 0.0f, 0.0f),
-		glm::vec3(0.0f, 1.0f, 0.0f)
-	);
-
+	float last_time = glfwGetTime();
+	double last_mouseX, last_mouseY;
+	glfwGetCursorPos(window, &last_mouseX, &last_mouseY);
+	
 	while(!glfwWindowShouldClose(window)) {
+		float current_time = glfwGetTime();
+		float delta_time = current_time - last_time;
+		last_time = current_time;
 		if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
 			glfwSetWindowShouldClose(window, true);
 		}
+		
+		_cam.moveFlight(
+			glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS,
+			glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS,
+			glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS,
+			glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS,
+			delta_time
+		);
+
+		// _cam.moveFPS(
+		// 	glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS,
+		// 	glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS,
+		// 	glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS,
+		// 	glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS,
+		// 	glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS,
+		// 	glfwGetKey(window, GLFW_KEY_LEFT_ALT) == GLFW_PRESS,
+		// 	delta_time
+		// );
+
+
+
+		double current_mouseX, current_mouseY;
+		glfwGetCursorPos(window, &current_mouseX, &current_mouseY);
+				
+		double delta_mouseX = current_mouseX - last_mouseX;
+		double delta_mouseY = current_mouseY - last_mouseY;
+		last_mouseX = current_mouseX;
+		last_mouseY = current_mouseY;
+
+		_cam.rotate(
+			delta_mouseX,
+			delta_mouseY,
+			glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS,
+			glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS,
+			delta_time
+		);
+
+		_cam.update();
 
 		OpenGL::clearScreen();
-
+		
 		
 		glUseProgram(prog_handler);
 		
 		//set the camera transform for 3d based on cameras state
 		glUniformMatrix4fv(
+			glGetUniformLocation(prog_handler, "u_projection"),
+			1,
+			GL_FALSE,
+			glm::value_ptr(_cam.m_projection)
+		);
+		glUniformMatrix4fv(
+			glGetUniformLocation(prog_handler, "u_view"),
+			1,
+			GL_FALSE,
+			glm::value_ptr(_cam.m_view)
+		);
+		glUniformMatrix4fv(
 			glGetUniformLocation(prog_handler, "u_model"),
 			1,
 			GL_FALSE,
-			glm::value_ptr(_cam.m_model)
+			glm::value_ptr(glm::mat4(1.0f))
 		);
 
-		glUniformMatrix4fv(
-			glGetUniformLocation(prog_handler, "u_mvp"),
-			1,
-			GL_FALSE,
-			glm::value_ptr(_cam.mvp())
-		);
 
 		glUniform3fv(
 			glGetUniformLocation(prog_handler, "u_cameraPosition"),
@@ -107,7 +158,8 @@ int main(int argc, char** argv) {
 		);
 		
 		glBindVertexArray(vao_handle);
-		glDrawArrays(GL_POINTS, 0, vertex_count);
+		//glDrawArrays(GL_POINTS, 0, vertex_count); //draw points
+		glDrawElements(GL_LINES, 24, GL_UNSIGNED_INT, 0);
 
 		GLenum err;
 		while ((err = glGetError()) != GL_NO_ERROR) {

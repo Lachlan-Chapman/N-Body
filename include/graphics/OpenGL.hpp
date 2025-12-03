@@ -47,4 +47,6 @@ namespace OpenGL {
 	);
 
 	GLuint mallocVAO(unsigned int p_count = 1);
+
+	GLuint mallocEBO(unsigned int p_count = 1);
 }
