@@ -10,7 +10,8 @@ object/main.o: src/main.cpp include/graphics/OpenGL.hpp \
  /usr/local/cuda/include/surface_types.h \
  /usr/local/cuda/include/texture_types.h \
  /usr/local/cuda/include/cuda_device_runtime_api.h include/GLAD/types.hpp \
- include/observer/camera.hpp include/shapes/octahedron.hpp
+ include/observer/cameraFlight.hpp include/observer/camera.hpp \
+ include/shapes/octahedron.hpp
 include/graphics/OpenGL.hpp:
 include/GLAD/glad.h:
 include/KHR/khrplatform.h:
@@ -27,5 +28,6 @@ include/graphics/OpenCuda.hpp:
 /usr/local/cuda/include/texture_types.h:
 /usr/local/cuda/include/cuda_device_runtime_api.h:
 include/GLAD/types.hpp:
+include/observer/cameraFlight.hpp:
 include/observer/camera.hpp:
 include/shapes/octahedron.hpp:

@@ -7,7 +7,7 @@
 #include "graphics/Cuda.hpp"
 #include "graphics/OpenCuda.hpp"
 
-#include "observer/camera.hpp"
+#include "observer/cameraFlight.hpp"
 
 #include "shapes/octahedron.hpp"
 
@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
 	if(!(prog_handler = OpenGL::linkProgram(vert_handler, frag_handler))) { return -1; }
 
 
-	camera _cam(
+	camera *_cam = new cameraFlight(
 		glm::vec3(0.0, 0.0, 3.0),
 		glm::radians(90.0f),
 		16.0f/9.0f,
@@ -87,23 +87,15 @@ int main(int argc, char** argv) {
 			glfwSetWindowShouldClose(window, true);
 		}
 		
-		_cam.moveFlight(
+		_cam->move(
 			glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS,
 			glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS,
 			glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS,
 			glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS,
+			glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS,
+			glfwGetKey(window, GLFW_KEY_LEFT_ALT) == GLFW_PRESS,
 			delta_time
 		);
-
-		// _cam.moveFPS(
-		// 	glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS,
-		// 	glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS,
-		// 	glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS,
-		// 	glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS,
-		// 	glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS,
-		// 	glfwGetKey(window, GLFW_KEY_LEFT_ALT) == GLFW_PRESS,
-		// 	delta_time
-		// );
 
 
 
@@ -115,7 +107,7 @@ int main(int argc, char** argv) {
 		last_mouseX = current_mouseX;
 		last_mouseY = current_mouseY;
 
-		_cam.rotate(
+		_cam->rotate(
 			delta_mouseX,
 			delta_mouseY,
 			glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS,
@@ -123,7 +115,7 @@ int main(int argc, char** argv) {
 			delta_time
 		);
 
-		_cam.update();
+		_cam->update();
 
 		OpenGL::clearScreen();
 		
@@ -135,13 +127,13 @@ int main(int argc, char** argv) {
 			glGetUniformLocation(prog_handler, "u_projection"),
 			1,
 			GL_FALSE,
-			glm::value_ptr(_cam.m_projection)
+			glm::value_ptr(_cam->m_projection)
 		);
 		glUniformMatrix4fv(
 			glGetUniformLocation(prog_handler, "u_view"),
 			1,
 			GL_FALSE,
-			glm::value_ptr(_cam.m_view)
+			glm::value_ptr(_cam->m_view)
 		);
 		glUniformMatrix4fv(
 			glGetUniformLocation(prog_handler, "u_model"),
@@ -154,7 +146,7 @@ int main(int argc, char** argv) {
 		glUniform3fv(
 			glGetUniformLocation(prog_handler, "u_cameraPosition"),
 			1,
-			glm::value_ptr(_cam.m_position)
+			glm::value_ptr(_cam->m_position)
 		);
 		
 		glBindVertexArray(vao_handle);

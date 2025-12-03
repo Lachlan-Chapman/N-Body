@@ -15,52 +15,44 @@ public:
 		float p_farPlane
 	);
 
-	void moveFlight(
-		bool p_w,
-		bool p_a,
-		bool p_s,
-		bool p_d,
-		float p_deltaTime
-	);
-
-	void moveFPS(
+	virtual void move(
 		bool p_w,
 		bool p_a,
 		bool p_s,
 		bool p_d,
 		bool p_space,
-		bool p_alt,
+		bool p_leftAlt,
 		float p_deltaTime
-	);
+	) = 0;
 
-	void rotate(
+	virtual void rotate(
 		float p_mouseX,
 		float p_mouseY,
 		bool p_q,
 		bool p_e,
 		float p_deltaTime
-	);
+	) = 0;
 
 	void update();
 
 	glm::vec3 m_position;
 	glm::mat4 m_view, m_model, m_projection, m_mvp;
-private:
-	void pitch(float p_radians);
-	void yaw(float p_radians);
-	void roll(float p_radians);
+protected:
+	glm::quat pitch(float p_radians) const;
+	virtual glm::quat yaw(float p_radians) const = 0; //rotate function to change between flight and fps camera
+	glm::quat roll(float p_radians) const;
 
 	glm::vec3 localForward() const;
 	glm::vec3 localUp() const;
 	glm::vec3 localRight() const;
-	glm::vec3 globalForward() const;
-	glm::vec3 globalUp() const;
-	glm::vec3 globalRight() const;
+
+	glm::vec3 worldForward() const;
+	glm::vec3 worldUp() const;
+	glm::vec3 worldRight() const;
 
 	glm::mat4 projection() const;
 	glm::mat4 view() const;
 	glm::mat4 model() const;
-	
 	
 	glm::quat m_orientation;
 	

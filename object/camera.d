@@ -1,2 +1,2 @@
-object/camera.o: src/camera.cpp include/observer/camera.hpp
+object/camera.o: src/observer/camera.cpp include/observer/camera.hpp
 include/observer/camera.hpp:
