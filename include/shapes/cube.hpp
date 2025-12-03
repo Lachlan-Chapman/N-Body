@@ -1,31 +1,19 @@
-//8 points top and bottom
-float cubeVertices[] = {
-	// positions			/ colors
-	-0.5f, -0.5f, -0.5f,	1.0f, 0.0f, 0.0f,
-	 0.5f, -0.5f, -0.5f,	0.0f, 1.0f, 0.0f,
-	 0.5f,  0.5f, -0.5f,	0.0f, 0.0f, 1.0f,
-	-0.5f,  0.5f, -0.5f,	1.0f, 1.0f, 0.0f,
-
-	-0.5f, -0.5f,  0.5f,	1.0f, 0.0f, 1.0f,
-	 0.5f, -0.5f,  0.5f,	0.0f, 1.0f, 1.0f,
-	 0.5f,  0.5f,  0.5f,	1.0f, 1.0f, 1.0f,
-	-0.5f,  0.5f,  0.5f,	0.3f, 0.7f, 0.9f,
-};
-
-unsigned int cubeIndices[] = {
-	//back face
-	0, 1, 2, 2, 3, 0, //tracing out start to finish triangles, two tris form the back face
-	//front face
-	4, 5, 6, 6, 7, 4,
-	//left face
-	4, 0, 3, 3, 7, 4,
-	//right face
-	1, 5, 6, 6, 2, 1,
-	//bottom face
-	4, 5, 1, 1, 0, 4,
-	//top face
-	3, 2, 6, 6, 7, 3
-};
+#pragma once
+namespace Primitive {
+	//8 points top and bottom
+	float cube[] = {
+		// positions			/ colors
+		-0.5f, -0.5f, -0.5f,
+		 0.5f, -0.5f, -0.5f,
+		 0.5f,  0.5f, -0.5f,
+		-0.5f,  0.5f, -0.5f,
+		
+		-0.5f, -0.5f,  0.5f,
+		 0.5f, -0.5f,  0.5f,
+		 0.5f,  0.5f,  0.5f,
+		-0.5f,  0.5f,  0.5f,
+	};
+}
 
 //EBO element buffer object store indicies to tell the gpu where the positions are found in the object data
 //VBO vertex buffer object is a chunk of GPU memory to store attributes about out vertices like position and color

@@ -23,7 +23,7 @@ __global__ void buildFibonnaciSphere(float *p_positions, int p_vertexCount) {
 	// p_positions[idx * 3 + 0] = (float)idx;
 	// p_positions[idx * 3 + 1] = (float)idx;
 	// p_positions[idx * 3 + 2] = (float)idx;
-	printf("Thread %d: hello\n%f, %f, %f\n\n", idx, p_positions[idx * 3 + 0], p_positions[idx * 3 + 1], p_positions[idx * 3 + 2]);
+	//printf("Thread %d: hello\n%f, %f, %f\n\n", idx, p_positions[idx * 3 + 0], p_positions[idx * 3 + 1], p_positions[idx * 3 + 2]);
 }
 
 void fibonacciSphere(float *p_positions, int p_vertexCount) {

@@ -1,5 +1,5 @@
-object/cuda_functions.o: src/graphics/cuda_functions.cpp \
- include/graphics/cuda_helper.hpp /usr/local/cuda/include/cuda_runtime.h \
+object/Cuda.o: src/graphics/Cuda.cpp \
+ /usr/local/cuda/include/cuda_runtime.h \
  /usr/local/cuda/include/crt/host_config.h \
  /usr/local/cuda/include/builtin_types.h \
  /usr/local/cuda/include/device_types.h \
@@ -15,8 +15,7 @@ object/cuda_functions.o: src/graphics/cuda_functions.cpp \
  /usr/local/cuda/include/driver_functions.h \
  /usr/local/cuda/include/vector_functions.h \
  /usr/local/cuda/include/vector_functions.hpp \
- /usr/local/cuda/include/cuda_gl_interop.h include/GLAD/types.hpp
-include/graphics/cuda_helper.hpp:
+ /usr/local/cuda/include/cuda_gl_interop.h include/graphics/Cuda.hpp
 /usr/local/cuda/include/cuda_runtime.h:
 /usr/local/cuda/include/crt/host_config.h:
 /usr/local/cuda/include/builtin_types.h:
@@ -34,4 +33,4 @@ include/graphics/cuda_helper.hpp:
 /usr/local/cuda/include/vector_functions.h:
 /usr/local/cuda/include/vector_functions.hpp:
 /usr/local/cuda/include/cuda_gl_interop.h:
-include/GLAD/types.hpp:
+include/graphics/Cuda.hpp:
