@@ -3,14 +3,7 @@
 
 class cameraFlight : public camera {
 public:
-	cameraFlight() = delete;
-	cameraFlight(
-		glm::vec3 p_position,
-		float p_fov,
-		float p_aspectRatio,
-		float p_nearPlane,
-		float p_farPlane
-	);
+	using camera::camera; //pass on the constructor direclty
 
 	void move(
 		bool p_w,
@@ -29,7 +22,6 @@ public:
 		bool p_e,
 		float p_deltaTime
 	) override;
-
 protected:
 	glm::quat yaw(float p_radians) const override;
 };

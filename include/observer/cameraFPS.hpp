@@ -2,14 +2,7 @@
 #include "observer/camera.hpp"
 
 class cameraFPS : public camera {
-	cameraFPS() = delete;
-	cameraFPS(
-		glm::vec3 p_position,
-		float p_fov,
-		float p_aspectRatio,
-		float p_nearPlane,
-		float p_farPlane
-	);
+	using camera::camera; //use parent constructors
 
 	void move(
 		bool p_w,

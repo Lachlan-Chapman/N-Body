@@ -29,7 +29,7 @@ void cameraFPS::move(
 }
 
 glm::quat cameraFPS::yaw(float p_radians) const {
-	return glm::angleAxis(p_radians, glm::normalize(localUp()));
+	return glm::angleAxis(p_radians, glm::normalize(worldUp()));
 }
 
 void cameraFPS::rotate(
@@ -38,4 +38,18 @@ void cameraFPS::rotate(
 	bool p_q,
 	bool p_e,
 	float p_deltaTime
-) {}
+) {
+	float _pitch = -p_mouseY * m_sensitivity;
+	float _yaw = -p_mouseX * m_sensitivity;
+
+	glm::quat delta_pitch = pitch(_pitch);
+	glm::quat delta_yaw = yaw(_yaw);
+
+	m_orientation = glm::normalize(delta_pitch * delta_yaw * m_orientation);
+
+	//remove roll only
+	glm::vec3 _forward = m_orientation * worldForward();
+	glm::vec3 _up = worldUp();
+
+	m_orientation = glm::normalize(glm::quatLookAt(_forward, _up));
+}

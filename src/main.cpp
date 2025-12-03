@@ -8,6 +8,7 @@
 #include "graphics/OpenCuda.hpp"
 
 #include "observer/cameraFlight.hpp"
+#include "observer/cameraFPS.hpp"
 
 #include "shapes/octahedron.hpp"
 
@@ -67,9 +68,9 @@ int main(int argc, char** argv) {
 	if(!(prog_handler = OpenGL::linkProgram(vert_handler, frag_handler))) { return -1; }
 
 
-	camera *_cam = new cameraFlight(
+	camera *_cam = new cameraFPS(
 		glm::vec3(0.0, 0.0, 3.0),
-		glm::radians(90.0f),
+		glm::radians(60.0f),
 		16.0f/9.0f,
 		0.1f,
 		100.0f

@@ -15,14 +15,6 @@ camera::camera(
 	m_orientation(glm::quat(1, 0, 0, 0))
 {}
 
-
-glm::quat camera::pitch(float p_radians) const {
-	return glm::angleAxis(p_radians, glm::normalize(localRight()));
-}
-glm::quat camera::roll(float p_radians) const {
-	return glm::angleAxis(p_radians, glm::normalize(localForward()));
-}
-
 inline glm::vec3 camera::worldForward() const {
 	return glm::vec3(0, 0, -1);
 }
@@ -41,6 +33,13 @@ glm::vec3 camera::localUp() const {
 }
 glm::vec3 camera::localRight() const {
 	return m_orientation * worldRight();
+}
+
+glm::quat camera::pitch(float p_radians) const {
+	return glm::angleAxis(p_radians, glm::normalize(localRight()));
+}
+glm::quat camera::roll(float p_radians) const {
+	return glm::angleAxis(p_radians, glm::normalize(localForward()));
 }
 
 glm::mat4 camera::projection() const {

@@ -1,21 +1,4 @@
 #include "observer/cameraFlight.hpp"
-
-cameraFlight::cameraFlight(
-	glm::vec3 p_position,
-	float p_fov,
-	float p_aspectRatio,
-	float p_nearPlane,
-	float p_farPlane
-) : 
-	camera(
-		p_position,
-		p_fov,
-		p_aspectRatio,
-		p_nearPlane,
-		p_farPlane
-	) 
-{}
-
 void cameraFlight::move(
 	bool p_w,
 	bool p_a,
@@ -51,12 +34,12 @@ void cameraFlight::rotate(
 	float _yaw = -p_mouseX * m_sensitivity;
 
 	glm::quat delta_pitch = pitch(_pitch);
-	glm::quat delta_yaw = yaw(_yaw);
+	glm::quat delta_yaw = yaw(_yaw); //child class changes this to determine FPS or flight control
 
 	float _roll = 0.0f;
 	static const float scale = 100.0f; //adhoc scale for now to handle keyboard based rotation
-	if (p_q) { _roll += m_sensitivity * scale * p_deltaTime; }
-	if (p_e) { _roll -= m_sensitivity * scale * p_deltaTime; }
+	if (p_q) { _roll -= m_sensitivity * scale * p_deltaTime; }
+	if (p_e) { _roll += m_sensitivity * scale * p_deltaTime; }
 	glm::quat delta_roll = roll(_roll);
 
 	//apply all rotations at once
