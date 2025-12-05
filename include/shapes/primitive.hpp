@@ -36,9 +36,9 @@ namespace Primitives {
 	};
 
 	static vec3f triangle_vertices[3] = {
-		vec3f(cosf(0 * third_tau), sinf(0 * third_tau), 0.0f), //top
-		vec3f(cosf(2 * third_tau), sinf(2 * third_tau), 0.0f),
-		vec3f(cosf(1 * third_tau), sinf(1 * third_tau), 0.0f),  //middle square
+		vec3f(cosf(0 * third_tau + 1.6f), sinf(0 * third_tau + 1.6f), 0.0f), //top
+		vec3f(cosf(2 * third_tau + 1.6f), sinf(2 * third_tau + 1.6f), 0.0f),
+		vec3f(cosf(1 * third_tau + 1.6f), sinf(1 * third_tau + 1.6f), 0.0f),  //middle square
 	};
 	
 	static constexpr unsigned int triangle_edges[6] = {

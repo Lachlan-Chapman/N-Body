@@ -9,7 +9,8 @@ public:
 	static unsigned int calculateVertexCount(unsigned int p_subdivisonCount);
 	static unsigned int calculateEdgeCount(unsigned int p_subdivisonCount);
 	static unsigned int calculateFaceCount(unsigned int p_subdivisonCount);
-	
+	static unsigned int calculateLayerCount(unsigned int p_subdivisionCount);
+	static void faceTriangle(vec<3, unsigned int> *&p_faceIndicies, vec3f *p_vertices, unsigned int p_subdivisonCount);
 	triangle();
 
 	triangle(
@@ -28,6 +29,8 @@ public:
 		vec3f *&p_newVertices,
 		unsigned int &p_vertexCount
 	);
+
+	
 private:
 	vec3f m_alpha, m_beta, m_epsilon; //used for basic primitive triangle
 	

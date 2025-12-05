@@ -45,20 +45,26 @@ int main(int argc, char** argv) {
 
 	GLuint prog_handler;
 	if(!(prog_handler = OpenGL::linkProgram(vert_handler, frag_handler))) { return -1; }
-
+	
 	triangle _tri;
-	vec3f *new_vertices;
-	unsigned int new_count = 0;
-	_tri.subdivide(3, new_vertices, new_count);
+	//refer to new triangle we are drawing as omega
+	unsigned int omega_subdivision_count = 1;
+	vec3f *omega_vertices;
+	unsigned int omega_vertex_count = 0;
+	_tri.subdivide(omega_subdivision_count, omega_vertices, omega_vertex_count);
 
-	GLuint tri_vao = OpenGL::mallocVAO();
-	glBindVertexArray(tri_vao);
-	GLuint tri_vbo = OpenGL::mallocVBO(sizeof(vec3f) * 3);
-	glBindBuffer(GL_ARRAY_BUFFER, tri_vbo);
+
+	//vao first
+	GLuint omega_vao = OpenGL::mallocVAO();
+	glBindVertexArray(omega_vao);
+
+	//vbo and shape data and interpretation second
+	GLuint omega_vbo = OpenGL::mallocVBO(sizeof(vec3f) * omega_vertex_count);
+	glBindBuffer(GL_ARRAY_BUFFER, omega_vbo);
 	glBufferData(
 		GL_ARRAY_BUFFER,
-		sizeof(vec3f) * new_count,
-		new_vertices,
+		sizeof(vec3f) * omega_vertex_count,
+		omega_vertices,
 		GL_STATIC_DRAW
 	);
 
@@ -71,6 +77,23 @@ int main(int argc, char** argv) {
 		sizeof(vec3f),
 		(void*)0
 	);
+
+	//ebo face interpretation or edges or whatever 3rd
+	GLuint omega_ebo = OpenGL::mallocEBO();
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, omega_ebo);
+	unsigned int omega_face_count = triangle::calculateFaceCount(omega_subdivision_count);
+	vec<3, unsigned int> *face_order = new vec<3, unsigned int>[4];
+	triangle::faceTriangle(face_order, omega_vertices, 1); //face order now has vec3 where xyz is the face vertex index in the VBO. so 0 points to the 0th vec3 in the vbo
+	glBufferData(
+		GL_ELEMENT_ARRAY_BUFFER,
+		omega_face_count * sizeof(vec<3, unsigned int>),
+		face_order,
+		GL_STATIC_DRAW
+	);
+
+	//all done so bind to the "null" handle to not target our vao (prevents accidently editing it with future calls)
+	glBindVertexArray(0);
+
 
 
 	camera *_cam = new cameraFPS(
@@ -155,9 +178,10 @@ int main(int argc, char** argv) {
 			glm::value_ptr(_cam->m_position)
 		);
 		
-		glBindVertexArray(tri_vao);
-		glDrawArrays(GL_POINTS, 0, new_count); //draw points
-		//glDrawElements(GL_LINES, 24, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(omega_vao); //this has all our info of the vertices and the ebo interpretation
+		//glDrawArrays(GL_POINTS, 0, omega_vertex_count); //draw points
+		//glDrawElements(GL_LINES, 24, GL_UNSIGNED_INT, 0); //draw lines
+		glDrawElements(GL_TRIANGLES, omega_face_count * 3, GL_UNSIGNED_INT, 0);
 
 		GLenum err;
 		while ((err = glGetError()) != GL_NO_ERROR) {

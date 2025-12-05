@@ -163,27 +163,7 @@ namespace OpenGL {
 
 	GLuint mallocVBO(int p_size, GLenum p_usage) {
 		GLuint vbo_handle;
-		glGenBuffers(
-			1, //generate just 1 buffer
-			&vbo_handle
-		);
-
-		glBindBuffer(
-			GL_ARRAY_BUFFER, //interpret this data is vertex data (consider it to be raw data for us to do whatever with for now)
-			vbo_handle
-		);
-
-		glBufferData(
-			GL_ARRAY_BUFFER,
-			p_size,
-			nullptr, //not passing any init data just making raw space
-			p_usage //the frequency this data will update at to give the driver a heads up to help it allocate best for us
-		);
-
-		glBindBuffer(
-			GL_ARRAY_BUFFER,
-			0 //unbind the gl buffer from our current handle to caller has to rebind if it wasnt to use the buffer made
-		);
+		glGenBuffers(1, &vbo_handle);
 		return vbo_handle;
 	}
 

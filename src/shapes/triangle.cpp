@@ -1,16 +1,63 @@
 #include "shapes/octahedron.hpp"
 
-inline unsigned int triangle::calculateVertexCount(unsigned int p_subdivisonCount) { //v(sd) = (sd^2 + 5sd + 6) / 2
-	return ((p_subdivisonCount * p_subdivisonCount) + (5 * p_subdivisonCount) + (6)) / 2;
+unsigned int triangle::calculateVertexCount(unsigned int p_subdivisonCount) { //v(sd) = (sd^2 + 5sd + 6) / 2
+	//return ((p_subdivisonCount * p_subdivisonCount) + (5 * p_subdivisonCount) + (6)) / 2;
+	return static_cast<unsigned int>(((p_subdivisonCount * p_subdivisonCount) + (5 * p_subdivisonCount) + (6)) * 0.5f); //should floor it
 }
 
-inline unsigned int triangle::calculateEdgeCount(unsigned int p_subdivisonCount) {
+unsigned int triangle::calculateEdgeCount(unsigned int p_subdivisonCount) {
 	return p_subdivisonCount;
 }
 
-inline unsigned int triangle::calculateFaceCount(unsigned int p_subdivisonCount) { //f(sd) = (sd+1)^2 
+unsigned int triangle::calculateFaceCount(unsigned int p_subdivisonCount) { //f(sd) = (sd+1)^2 
 	unsigned int face_count = p_subdivisonCount + 1;
 	return face_count * face_count;
+}
+
+unsigned int triangle::calculateLayerCount(unsigned int p_subdivisionCount) {
+	return p_subdivisionCount + 2; //top and bottom vertex + midpoints from subdividing
+}
+
+void triangle::faceTriangle(vec<3, unsigned int> *&p_faceIndicies, vec3f *p_vertices, unsigned int p_subdivisonCount) {
+	//alternate between the two
+	
+	unsigned int layer_count = calculateLayerCount(p_subdivisonCount);
+	unsigned int down_count = 0; //track total down faces made
+	
+	
+
+	vec<3, unsigned int> down_layer_end(down_count++, 2, 1); //init as the first triangle (identical for all tris) //the final triangle from the layer above, always a down triangle
+	vec<3, unsigned int> across_layer_end(1, 2, 4);
+	unsigned int face_counter = 0;
+	p_faceIndicies[face_counter++] = down_layer_end; //0th triangle is hard coded
+	p_faceIndicies[face_counter++] = across_layer_end; //0th across triangle is hard coded
+	for(int layer_id = 1; layer_id < layer_count-1; layer_id++) { //0th layer is hard coded
+		vec<3, unsigned int> face_order(0);
+		unsigned int total_downs = (layer_id + 1) % (layer_count + 1);
+		for(unsigned int down_id = 0; down_id < total_downs; down_id++) {
+			face_order[0] = down_count++; //alpha
+			face_order[1] = down_layer_end[1] + 2 + down_id; //beta
+			face_order[2] = face_order[1] - 1; //epsilon
+			p_faceIndicies[face_counter++] = face_order;
+			//std::cout << "Down Face Order ID " << layer_id << ", " << down_id << " " << face_order << "\n";
+		}
+		down_layer_end = face_order; //by here we are at the final tri of this layer
+		//std::cout << "stored prev layer order ID " << down_layer_end << "\n";
+		
+		unsigned int total_across = layer_id;
+		unsigned int across_count = 0;
+		if(layer_id == 1) { continue; } //the 0th layer has no across but we dont do layer 0, layer 1 is hard coded to skip it and everyone is then lined up
+		for(unsigned int across_id = 0; across_id < total_across; across_id++) {
+			face_order[0] = across_id + 2 + across_count + across_layer_end[0]; //alpha
+			face_order[1] = across_id + 2 + across_count + across_layer_end[1]; //beta
+			face_order[2] = across_id + 3 + across_count + across_layer_end[2]; //epsilon
+			p_faceIndicies[face_counter++] = face_order;
+			std::cout << "Across Face Order ID " << layer_id << ", " << across_id << " " << face_order << "\n";
+		}
+		across_layer_end = face_order;
+		std::cout << "stored prev layer order ID " << across_layer_end << "\n";
+	}
+	std::cout << "created " << face_counter << " faces | shoulda made " << triangle::calculateFaceCount(p_subdivisonCount) << "\n";
 }
 
 triangle::triangle() : 
@@ -73,7 +120,6 @@ void triangle::subdivide(
 		for(unsigned int vertex_id = 0; vertex_id < layer_vertex_count; vertex_id++) {
 			vec3f mid_position = edge_position + (vertex_id * right); //only ever move across to the right
 			p_newVertices[current_vertex++] = mid_position;
-			std::cout << "Vertex " << vertex_id << " " << mid_position << "\n";
 		}
 	}	
 }
