@@ -56,6 +56,6 @@ protected:
 	
 	glm::quat m_orientation;
 	
-	float m_speed = 10.0f, m_sensitivity = 0.015f;
+	float m_speed = 6.66f, m_sensitivity = 0.0015f;
 	float m_fov, m_aspectRatio, m_nearPlane, m_farPlane;
 };

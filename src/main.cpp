@@ -12,6 +12,8 @@
 
 #include "shapes/octahedron.hpp"
 
+#include "math/vec.hpp"
+
 
 
 void runDeformCube(float *data, float time, size_t bufferSize);
@@ -31,30 +33,7 @@ int main(int argc, char** argv) {
 		return 1;
 	}
 
-	int vertex_count = 6;
-	int vbo_size = sizeof(float) * 3 * vertex_count;
-	GLuint vbo_handle = OpenGL::mallocVBO(vbo_size, GL_STATIC_DRAW); //read only for vertex data
 	
-	//object data setup
-	GLuint vao_handle = OpenGL::mallocVAO(1);
-	glBindVertexArray(vao_handle); //bind to this vao that are we going to define the setup in the vbo setup
-	
-	glBindBuffer(GL_ARRAY_BUFFER, vbo_handle); //attach vbo to the bounded vao ^
-	glBufferData(GL_ARRAY_BUFFER, vbo_size, Primitive::octahedron, GL_STATIC_DRAW);
-	glEnableVertexAttribArray(0); //location 0 of the vShader will take in what im about to point it to
-	glVertexAttribPointer(
-		0, //pointing to location 0 of the shader
-		3, //3 items from the vbo
-		GL_FLOAT, //data type of the array
-		GL_FALSE, //dont normalise just read as is
-		sizeof(float) * 3, //stride is in steps of 3 floats as im making a vec3
-		(void*)0 //no offset
-	);
-
-	//create edges
-	GLuint ebo_handle = OpenGL::mallocEBO(1);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_handle);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Primitive::octahedronEdge), Primitive::octahedronEdge, GL_STATIC_DRAW);
 
 	std::string vert_shader = OpenGL::loadShader("shaders/vertex.vert");
 	std::string frag_shader = OpenGL::loadShader("shaders/white.frag");
@@ -66,6 +45,32 @@ int main(int argc, char** argv) {
 
 	GLuint prog_handler;
 	if(!(prog_handler = OpenGL::linkProgram(vert_handler, frag_handler))) { return -1; }
+
+	triangle _tri;
+	vec3f *new_vertices;
+	unsigned int new_count = 0;
+	_tri.subdivide(3, new_vertices, new_count);
+
+	GLuint tri_vao = OpenGL::mallocVAO();
+	glBindVertexArray(tri_vao);
+	GLuint tri_vbo = OpenGL::mallocVBO(sizeof(vec3f) * 3);
+	glBindBuffer(GL_ARRAY_BUFFER, tri_vbo);
+	glBufferData(
+		GL_ARRAY_BUFFER,
+		sizeof(vec3f) * new_count,
+		new_vertices,
+		GL_STATIC_DRAW
+	);
+
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(
+		0,
+		3,
+		GL_FLOAT,
+		GL_FALSE,
+		sizeof(vec3f),
+		(void*)0
+	);
 
 
 	camera *_cam = new cameraFPS(
@@ -150,9 +155,9 @@ int main(int argc, char** argv) {
 			glm::value_ptr(_cam->m_position)
 		);
 		
-		glBindVertexArray(vao_handle);
-		//glDrawArrays(GL_POINTS, 0, vertex_count); //draw points
-		glDrawElements(GL_LINES, 24, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(tri_vao);
+		glDrawArrays(GL_POINTS, 0, new_count); //draw points
+		//glDrawElements(GL_LINES, 24, GL_UNSIGNED_INT, 0);
 
 		GLenum err;
 		while ((err = glGetError()) != GL_NO_ERROR) {

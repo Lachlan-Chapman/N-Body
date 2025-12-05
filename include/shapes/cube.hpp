@@ -1,5 +1,5 @@
 #pragma once
-namespace Primitive {
+namespace Primitives {
 	//8 points top and bottom
 	float cube[] = {
 		// positions			/ colors

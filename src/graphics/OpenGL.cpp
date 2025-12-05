@@ -128,7 +128,7 @@ namespace OpenGL {
 		}
 
 		glfwSetInputMode(window, GLFW_STICKY_KEYS, GLFW_TRUE); //allow keys
-		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); //fix cursor
+		//glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); //fix cursor
 		glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE); //allow mouse delta input
 
 		glfwMakeContextCurrent(window); //set the context bound to this window

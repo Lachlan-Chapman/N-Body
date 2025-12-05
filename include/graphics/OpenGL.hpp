@@ -43,7 +43,7 @@ namespace OpenGL {
 	
 	GLuint mallocVBO( //said the data will update occasionally by default
 		int p_size,
-		GLenum p_usage = GL_DYNAMIC_DRAW
+		GLenum p_usage = GL_STATIC_DRAW
 	);
 
 	GLuint mallocVAO(unsigned int p_count = 1);

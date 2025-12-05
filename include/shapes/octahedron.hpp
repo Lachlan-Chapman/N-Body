@@ -1,19 +1,55 @@
 #pragma once
-namespace Primitive {
-	float octahedron[] = {
-		 0.0f,  0.5f,  0.0f, //top
-	
-		 0.5f,  0.0f,  0.5f,  //middle square
-		-0.5f,  0.0f,  0.5f,
-		-0.5f,  0.0f, -0.5f,
-		 0.5f,  0.0f, -0.5f,
-	
-		 0.0f, -0.5f,  0.0f //bottom
-	};
+#include <cmath>
+#include "math/vec.hpp"
+#include "shapes/primitive.hpp"
 
-	unsigned int octahedronEdge[] = {
-		0,1, 0,2, 0,3, 0,4, //top pyramid
-		1,2, 2,3, 3,4, 4,1, //middle sqaure
-		1,5, 2,5, 3,5, 4,5  //bottom pyramid
-	};
-}
+
+class triangle {
+public:
+	static unsigned int calculateVertexCount(unsigned int p_subdivisonCount);
+	static unsigned int calculateEdgeCount(unsigned int p_subdivisonCount);
+	static unsigned int calculateFaceCount(unsigned int p_subdivisonCount);
+	
+	triangle();
+
+	triangle(
+		vec3f p_alpha,
+		vec3f p_beta,
+		vec3f p_epsilon
+	);
+
+	triangle(
+		vec3f *p_vertices,
+		unsigned int p_vertexCount
+	);
+
+	void subdivide(
+		unsigned int p_subdivisionCount,
+		vec3f *&p_newVertices,
+		unsigned int &p_vertexCount
+	);
+private:
+	vec3f m_alpha, m_beta, m_epsilon; //used for basic primitive triangle
+	
+	vec3f *m_vertices; //used when storing a "complex" triangle
+	unsigned int m_vertexCount;
+};
+
+
+
+class octahedron {
+public:
+	octahedron();
+	octahedron(unsigned int p_subdivisonCount);
+
+private:
+
+	vec3f* mallocNewVertices();
+	void subdivideEdges();
+
+	mesh m_baseMesh;
+	mesh m_mesh;
+
+
+	unsigned int m_subdivisionCount;
+};
