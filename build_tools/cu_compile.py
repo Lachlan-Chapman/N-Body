@@ -10,7 +10,8 @@ class CuCompiler:
 
 	FLAGS: list[str] = [
 		"--std=c++20",
-		"-arch=sm_89"
+		"-arch=sm_89",
+		"--diag-suppress=20012"
 	]
 
 	HOST_FLAGS: list[str] = [

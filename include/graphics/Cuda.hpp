@@ -1,12 +1,17 @@
 #pragma once
-#pragma once
 
 #ifdef __CUDACC__
-	#define HD __host__ __device__ //cpp files will see this as if cuda doesnt exist at all
+	#define host_device __host__ __device__ //cpp files will see this as if cuda doesnt exist at all
+	#define host __host__ //cpp files will see this as if cuda doesnt exist at all
+	#define device __device__
 #else
-	#define HD
+	#define host_device
+	#define host
+	#define device
 #endif
 
 namespace Cuda {
 	bool createGPU();
+	void* malloc(size_t p_size); //size in bytes
+	void free(void *p_ptr);
 }

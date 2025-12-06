@@ -15,12 +15,11 @@ unsigned int triangle::calculateFaceCount(unsigned int p_subdivisonCount) { //f(
 }
 
 unsigned int triangle::calculateLayerCount(unsigned int p_subdivisionCount) {
-	return p_subdivisionCount + 2; //top and bottom vertex + midpoints from subdividing
+	return p_subdivisionCount + 1; //top and bottom vertex + midpoints from subdividing but minus the top vertex since layers begin from the 1th vertex
 }
 
 void triangle::faceTriangle(vec<3, unsigned int> *&p_faceIndicies, vec3f *p_vertices, unsigned int p_subdivisonCount) {
-	//alternate between the two
-	
+
 	unsigned int layer_count = calculateLayerCount(p_subdivisonCount);
 	unsigned int down_count = 0; //track total down faces made
 	
@@ -31,7 +30,7 @@ void triangle::faceTriangle(vec<3, unsigned int> *&p_faceIndicies, vec3f *p_vert
 	unsigned int face_counter = 0;
 	p_faceIndicies[face_counter++] = down_layer_end; //0th triangle is hard coded
 	p_faceIndicies[face_counter++] = across_layer_end; //0th across triangle is hard coded
-	for(int layer_id = 1; layer_id < layer_count-1; layer_id++) { //0th layer is hard coded
+	for(int layer_id = 1; layer_id < layer_count; layer_id++) { //0th layer is hard coded
 		vec<3, unsigned int> face_order(0);
 		unsigned int total_downs = (layer_id + 1) % (layer_count + 1);
 		for(unsigned int down_id = 0; down_id < total_downs; down_id++) {
@@ -55,9 +54,9 @@ void triangle::faceTriangle(vec<3, unsigned int> *&p_faceIndicies, vec3f *p_vert
 			std::cout << "Across Face Order ID " << layer_id << ", " << across_id << " " << face_order << "\n";
 		}
 		across_layer_end = face_order;
-		std::cout << "stored prev layer order ID " << across_layer_end << "\n";
+		//std::cout << "stored prev layer order ID " << across_layer_end << "\n";
 	}
-	std::cout << "created " << face_counter << " faces | shoulda made " << triangle::calculateFaceCount(p_subdivisonCount) << "\n";
+	//std::cout << "created " << face_counter << " faces | shoulda made " << triangle::calculateFaceCount(p_subdivisonCount) << "\n";
 }
 
 triangle::triangle() : 

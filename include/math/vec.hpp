@@ -85,6 +85,7 @@ struct vec_data<4, t_type> {
 	};
 };
 
+
 template <std::size_t t_dimension, arithmetic t_type>
 struct vec_operation : public vec_data<t_dimension, t_type> {
 	using data = vec_data<t_dimension, t_type>;
@@ -118,7 +119,7 @@ struct vec_operation : public vec_data<t_dimension, t_type> {
 		}
 	}
 
-	HD constexpr double square_length() const {
+	HD constexpr double squared_magnitude() const {
 		double len = 0;
 		for(std::size_t dim = 0; dim < t_dimension; dim++) {
 			len += m_elem[dim] * m_elem[dim];
@@ -127,7 +128,7 @@ struct vec_operation : public vec_data<t_dimension, t_type> {
 	};
 
 	HD constexpr double magnitude() const {
-		double length = square_length();
+		double length = squared_magnitude();
 		return static_cast<double>(fast_inverse(static_cast<float>(length))) * length;
 	}
 

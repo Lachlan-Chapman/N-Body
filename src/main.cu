@@ -14,9 +14,19 @@
 
 #include "math/vec.hpp"
 
+#include "simulation/universe.hpp"
 
 
-void runDeformCube(float *data, float time, size_t bufferSize);
+__global__ void mapPositions(vec3f *p_vbo, particles *p_particles) {
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	if(idx >= p_particles->m_particleCount) { return; }
+
+	p_vbo[idx] = vec3f(
+		p_particles->m_posX[idx],
+		p_particles->m_posY[idx],
+		p_particles->m_posZ[idx]
+	);
+}
 
 int main(int argc, char** argv) {
 	
@@ -35,7 +45,7 @@ int main(int argc, char** argv) {
 
 	
 
-	std::string vert_shader = OpenGL::loadShader("shaders/vertex.vert");
+	std::string vert_shader = OpenGL::loadShader("shaders/instance.vert");
 	std::string frag_shader = OpenGL::loadShader("shaders/white.frag");
 	if(vert_shader.empty() || frag_shader.empty()) { return 1; }
 	
@@ -46,29 +56,33 @@ int main(int argc, char** argv) {
 	GLuint prog_handler;
 	if(!(prog_handler = OpenGL::linkProgram(vert_handler, frag_handler))) { return -1; }
 	
-	triangle _tri;
-	//refer to new triangle we are drawing as omega
-	unsigned int omega_subdivision_count = 1;
-	vec3f *omega_vertices;
-	unsigned int omega_vertex_count = 0;
-	_tri.subdivide(omega_subdivision_count, omega_vertices, omega_vertex_count);
 
-
-	//vao first
-	GLuint omega_vao = OpenGL::mallocVAO();
-	glBindVertexArray(omega_vao);
-
-	//vbo and shape data and interpretation second
-	GLuint omega_vbo = OpenGL::mallocVBO(sizeof(vec3f) * omega_vertex_count);
-	glBindBuffer(GL_ARRAY_BUFFER, omega_vbo);
-	glBufferData(
-		GL_ARRAY_BUFFER,
-		sizeof(vec3f) * omega_vertex_count,
-		omega_vertices,
-		GL_STATIC_DRAW
+	camera *_cam = new cameraFPS(
+		glm::vec3(0.0, 0.0, 3.0),
+		glm::radians(60.0f),
+		16.0f/9.0f,
+		0.1f,
+		100.0f
 	);
 
-	glEnableVertexAttribArray(0);
+	//particle sim
+	universe omega(2, 1); //omega is just name i used for all test objects
+	int thread_count = 256;
+	int block_count = (omega.m_particles->m_particleCount + thread_count - 1) / thread_count; //ensure more than enough blocks of 256 are dispatched
+
+	//vao handler
+	GLuint octahedron_vao = OpenGL::createVAO();
+	OpenGL::bindVAO(octahedron_vao);
+	
+	//instance vbo
+	GLuint octahedron_vbo = OpenGL::createVBO();
+	OpenGL::bindVBO(octahedron_vbo);
+	OpenGL::setVBO(
+		sizeof(vec3f) * Primitives::octahedron_mesh.d_vertexCount,
+		Primitives::octahedron_vertices
+	);
+
+	glEnableVertexAttribArray(0); //make it a mesh vertex
 	glVertexAttribPointer(
 		0,
 		3,
@@ -78,31 +92,41 @@ int main(int argc, char** argv) {
 		(void*)0
 	);
 
-	//ebo face interpretation or edges or whatever 3rd
-	GLuint omega_ebo = OpenGL::mallocEBO();
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, omega_ebo);
-	unsigned int omega_face_count = triangle::calculateFaceCount(omega_subdivision_count);
-	vec<3, unsigned int> *face_order = new vec<3, unsigned int>[4];
-	triangle::faceTriangle(face_order, omega_vertices, 1); //face order now has vec3 where xyz is the face vertex index in the VBO. so 0 points to the 0th vec3 in the vbo
-	glBufferData(
-		GL_ELEMENT_ARRAY_BUFFER,
-		omega_face_count * sizeof(vec<3, unsigned int>),
-		face_order,
-		GL_STATIC_DRAW
+	//instance ebo
+	GLuint octahedron_ebo = OpenGL::createEBO();
+	OpenGL::bindEBO(octahedron_ebo);
+	OpenGL::setEBO(
+		sizeof(vec<3, unsigned int>) * Primitives::octahedron_mesh.d_faceCount,
+		Primitives::octahedron_faces
 	);
 
-	//all done so bind to the "null" handle to not target our vao (prevents accidently editing it with future calls)
-	glBindVertexArray(0);
 
-
-
-	camera *_cam = new cameraFPS(
-		glm::vec3(0.0, 0.0, 3.0),
-		glm::radians(60.0f),
-		16.0f/9.0f,
-		0.1f,
-		100.0f
+	//positions vbo
+	GLuint position_vbo = OpenGL::createVBO();
+	OpenGL::bindVBO(position_vbo);
+	
+	//manual instance testing
+	vec3f test_pos[2] = {vec3f(0.0f), vec3f(2.0)};
+	OpenGL::setVBO(
+		sizeof(vec3f) * 2,
+		&test_pos
 	);
+
+	//set instancing based on positions
+	glEnableVertexAttribArray(1); //now this vbo which is the positions are data per instance
+	glVertexAttribPointer(
+		1,
+		3,
+		GL_FLOAT,
+		GL_FALSE,
+		sizeof(vec3f),
+		(void*)0
+	);
+	glVertexAttribDivisor(1, 1); //1 to 1 mapping of pos vbo data to mesh vbo instance
+	glBindVertexArray(0); //unbind vao marking the end of the setup
+
+	cudaGraphicsResource *cuda_positions = OpenCuda::bindVBO(position_vbo);
+
 
 	float last_time = glfwGetTime();
 	double last_mouseX, last_mouseY;
@@ -146,6 +170,16 @@ int main(int argc, char** argv) {
 
 		_cam->update();
 
+		// omega.step();
+		// OpenCuda::lockVBO(cuda_positions); //we lock since we about to change it
+		// size_t position_size;
+		// vec3f* positions = (vec3f*)OpenCuda::getVBO(&position_size, cuda_positions); //this is the ptr to the graphics subsystem vbo with out positions
+		// mapPositions<<<block_count, thread_count>>>(positions, omega.m_particles); //the vbo after this contains the positions as vec3
+		// OpenCuda::unlockVBO(cuda_positions);
+
+
+
+		//rendering things
 		OpenGL::clearScreen();
 		
 		
@@ -170,18 +204,22 @@ int main(int argc, char** argv) {
 			GL_FALSE,
 			glm::value_ptr(glm::mat4(1.0f))
 		);
-
-
 		glUniform3fv(
 			glGetUniformLocation(prog_handler, "u_cameraPosition"),
 			1,
 			glm::value_ptr(_cam->m_position)
 		);
 		
-		glBindVertexArray(omega_vao); //this has all our info of the vertices and the ebo interpretation
-		//glDrawArrays(GL_POINTS, 0, omega_vertex_count); //draw points
-		//glDrawElements(GL_LINES, 24, GL_UNSIGNED_INT, 0); //draw lines
-		glDrawElements(GL_TRIANGLES, omega_face_count * 3, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(octahedron_vao);
+		glDrawElementsInstanced(
+			GL_TRIANGLES,
+			Primitives::octahedron_mesh.d_faceCount * 3,
+			GL_UNSIGNED_INT,
+			(void*)0,
+			2 //omega.m_particles->m_particleCount
+		);
+
+
 
 		GLenum err;
 		while ((err = glGetError()) != GL_NO_ERROR) {

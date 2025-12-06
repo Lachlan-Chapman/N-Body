@@ -1,5 +1,6 @@
 #pragma once
 #include "graphics/Cuda.hpp"
+#include "math/vec.hpp"
 struct mesh {
 	vec3f const *d_vertices;
 	unsigned int const *d_edgeIds;
@@ -28,11 +29,22 @@ namespace Primitives {
 		1,5, 2,5, 3,5, 4,5  //bottom pyramid
 	};
 
+	static vec<3, unsigned int> octahedron_faces[8] = {
+		vec<3, unsigned int>(0, 1, 2),
+		vec<3, unsigned int>(0, 2, 3),
+		vec<3, unsigned int>(0, 3, 4),
+		vec<3, unsigned int>(0, 4, 1),
+		vec<3, unsigned int>(5, 2, 1),
+		vec<3, unsigned int>(5, 3, 2),
+		vec<3, unsigned int>(5, 4, 3),
+		vec<3, unsigned int>(5, 1, 4)
+	};
+
 	static mesh const octahedron_mesh = {
 		octahedron_vertices,
 		octahedron_edges,
 		nullptr,
-		6, 12, 0
+		6, 12, 8
 	};
 
 	static vec3f triangle_vertices[3] = {

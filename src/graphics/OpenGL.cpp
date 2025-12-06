@@ -128,7 +128,7 @@ namespace OpenGL {
 		}
 
 		glfwSetInputMode(window, GLFW_STICKY_KEYS, GLFW_TRUE); //allow keys
-		//glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); //fix cursor
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); //fix cursor
 		glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE); //allow mouse delta input
 
 		glfwMakeContextCurrent(window); //set the context bound to this window
@@ -161,21 +161,54 @@ namespace OpenGL {
 		);
 	}
 
-	GLuint mallocVBO(int p_size, GLenum p_usage) {
+
+	GLuint createVAO() {
+		GLuint vao_handle;
+		glGenVertexArrays(1, &vao_handle);
+		return vao_handle;
+	}
+
+	void bindVAO(GLuint p_handle) {
+		glBindVertexArray(p_handle);
+	}
+
+	GLuint createVBO() {
 		GLuint vbo_handle;
 		glGenBuffers(1, &vbo_handle);
 		return vbo_handle;
 	}
 
-	GLuint mallocVAO(unsigned int p_count) {
-		GLuint vao_handle;
-		glGenVertexArrays(p_count, &vao_handle);
-		return vao_handle;
+	void bindVBO(GLuint p_handle) {
+		glBindBuffer(GL_ARRAY_BUFFER, p_handle);
 	}
 
-	GLuint mallocEBO(unsigned int p_count) {
+	
+	void setVBO(size_t p_size, void const *p_data, GLenum p_usage) {
+		glBufferData(
+			GL_ARRAY_BUFFER,
+			p_size,
+			p_data,
+			p_usage
+		);
+	}
+
+
+	GLuint createEBO() {
 		GLuint ebo_handle;
-		glGenBuffers(p_count, &ebo_handle);
+		glGenBuffers(1, &ebo_handle);
 		return ebo_handle;
+	}
+
+	void bindEBO(GLuint p_handle) {
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, p_handle);
+	}
+
+	void setEBO(size_t p_size, void const *p_data, GLenum p_usage) {
+		glBufferData(
+			GL_ELEMENT_ARRAY_BUFFER,
+			p_size,
+			p_data,
+			p_usage
+		);
 	}
 }
