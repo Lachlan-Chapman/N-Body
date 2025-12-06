@@ -3,6 +3,24 @@
 #include "simulation/particle.hpp"
 #include "simulation/universe.hpp"
 
+__global__ void initUniverse(particles *p_particles, float p_scale, float p_spread) {
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	if (idx >= p_particles->m_particleCount) return;
+
+	//simple distribution
+	float t = (float)idx / (float)(p_particles->m_particleCount - 1);
+
+	p_particles->m_posX[idx] = cosf(t * 6.2831f) * p_spread;
+	p_particles->m_posY[idx] = sinf(t * 6.2831f) * p_spread;
+	p_particles->m_posZ[idx] = 0.0f;
+
+	p_particles->m_velX[idx] = 0.0f;
+	p_particles->m_velY[idx] = 0.0f;
+	p_particles->m_velZ[idx] = 0.0f;
+
+	p_particles->m_mass[idx] = p_scale;
+}
+
 universe::universe(size_t p_particleCount, unsigned int p_frequency) { //struct of arrays init
 	m_frequency = 1.0f / p_frequency;
 	m_particles = new particles;
@@ -17,7 +35,12 @@ universe::universe(size_t p_particleCount, unsigned int p_frequency) { //struct 
 	m_particles->m_posY = (float*)Cuda::malloc(p_particleCount * sizeof(float));
 	m_particles->m_posZ = (float*)Cuda::malloc(p_particleCount * sizeof(float));
 	m_particles->m_mass = (float*)Cuda::malloc(p_particleCount * sizeof(float));
+	int thread_count = 256;
+	int block_count = (m_particles->m_particleCount + thread_count - 1) / thread_count; //ensure more than enough blocks of 256 are dispatched
+	initUniverse<<<block_count, thread_count>>>(m_particles, 1.0f, 10.0f);
 }
+
+
 
 __constant__ __device__ float epsilon_squared = 1e-4f * 1e-4f;
 //__constant__ __device__ float G = 6.674e-11f;

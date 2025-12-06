@@ -66,7 +66,7 @@ int main(int argc, char** argv) {
 	);
 
 	//particle sim
-	universe omega(2, 1); //omega is just name i used for all test objects
+	universe omega(4, 100); //omega is just name i used for all test objects
 	int thread_count = 256;
 	int block_count = (omega.m_particles->m_particleCount + thread_count - 1) / thread_count; //ensure more than enough blocks of 256 are dispatched
 
@@ -106,11 +106,16 @@ int main(int argc, char** argv) {
 	OpenGL::bindVBO(position_vbo);
 	
 	//manual instance testing
-	vec3f test_pos[2] = {vec3f(0.0f), vec3f(2.0)};
+	// vec3f test_pos[2] = {vec3f(0.0f), vec3f(2.0)};
+	// OpenGL::setVBO(
+	// 	sizeof(vec3f) * 2,
+	// 	&test_pos
+	// );
+
 	OpenGL::setVBO(
-		sizeof(vec3f) * 2,
-		&test_pos
-	);
+		sizeof(vec3f) * omega.m_particles->m_particleCount,
+		nullptr
+	); //allocate raw size
 
 	//set instancing based on positions
 	glEnableVertexAttribArray(1); //now this vbo which is the positions are data per instance
@@ -125,7 +130,39 @@ int main(int argc, char** argv) {
 	glVertexAttribDivisor(1, 1); //1 to 1 mapping of pos vbo data to mesh vbo instance
 	glBindVertexArray(0); //unbind vao marking the end of the setup
 
+	
+	//set init conditions
 	cudaGraphicsResource *cuda_positions = OpenCuda::bindVBO(position_vbo);
+	OpenCuda::lockVBO(cuda_positions); //we lock since we about to change it
+	size_t position_size;
+	vec3f* positions = (vec3f*)OpenCuda::getVBO(&position_size, cuda_positions); //this is the ptr to the graphics subsystem vbo with out positions
+	mapPositions<<<block_count, thread_count>>>(positions, omega.m_particles); //the vbo after this contains the positions as vec3
+	OpenCuda::unlockVBO(cuda_positions);
+
+
+	///plane
+	GLuint plane_vao = OpenGL::createVAO();
+	OpenGL::bindVAO(plane_vao);
+
+	// VBO
+	GLuint plane_vbo = OpenGL::createVBO();
+	OpenGL::bindVBO(plane_vbo);
+	OpenGL::setVBO(sizeof(Primitives::plane_vertices), Primitives::plane_vertices);
+
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(
+		0, 3, GL_FLOAT, GL_FALSE,
+		3 * sizeof(float), (void*)0
+	);
+
+	// EBO
+	GLuint plane_ebo = OpenGL::createEBO();
+	OpenGL::bindEBO(plane_ebo);
+	OpenGL::setEBO(sizeof(Primitives::plane_indices), Primitives::plane_indices);
+
+	glBindVertexArray(0);
+
+
 
 
 	float last_time = glfwGetTime();
@@ -170,12 +207,13 @@ int main(int argc, char** argv) {
 
 		_cam->update();
 
-		// omega.step();
-		// OpenCuda::lockVBO(cuda_positions); //we lock since we about to change it
-		// size_t position_size;
-		// vec3f* positions = (vec3f*)OpenCuda::getVBO(&position_size, cuda_positions); //this is the ptr to the graphics subsystem vbo with out positions
-		// mapPositions<<<block_count, thread_count>>>(positions, omega.m_particles); //the vbo after this contains the positions as vec3
-		// OpenCuda::unlockVBO(cuda_positions);
+		//omega.step();
+		OpenCuda::lockVBO(cuda_positions); //we lock since we about to change it
+		size_t position_size;
+		vec3f* positions = (vec3f*)OpenCuda::getVBO(&position_size, cuda_positions); //this is the ptr to the graphics subsystem vbo with out positions
+		mapPositions<<<block_count, thread_count>>>(positions, omega.m_particles); //the vbo after this contains the positions as vec3
+		OpenCuda::unlockVBO(cuda_positions);
+		
 
 
 
@@ -184,6 +222,9 @@ int main(int argc, char** argv) {
 		
 		
 		glUseProgram(prog_handler);
+
+		glBindVertexArray(plane_vao);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		
 		//set the camera transform for 3d based on cameras state
 		glUniformMatrix4fv(
@@ -216,7 +257,7 @@ int main(int argc, char** argv) {
 			Primitives::octahedron_mesh.d_faceCount * 3,
 			GL_UNSIGNED_INT,
 			(void*)0,
-			2 //omega.m_particles->m_particleCount
+			omega.m_particles->m_particleCount
 		);
 
 

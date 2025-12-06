@@ -67,4 +67,16 @@ namespace Primitives {
 		triangle_faces,
 		3, 3, 1
 	};
+
+	static const float plane_vertices[] = {
+		-5.0f, -10.0f, -5.0f,
+		 5.0f, -10.0f, -5.0f,
+		 5.0f, -10.0f,  5.0f,
+		-5.0f, -10.0f,  5.0f
+	};
+
+	static const unsigned int plane_indices[] = {
+		0, 1, 2,
+		2, 3, 0
+	};
 }
