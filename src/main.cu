@@ -31,8 +31,8 @@ __global__ void mapPositions(vec3f *p_vbo, particles *p_particles) {
 int main(int argc, char** argv) {
 	
 	GLFWwindow *window = OpenGL::createContext(
-		1920,
-		1080,
+		3840,
+		2160,
 		"Context"
 	);
 	if(!window) { return 1; }
@@ -57,16 +57,9 @@ int main(int argc, char** argv) {
 	if(!(prog_handler = OpenGL::linkProgram(vert_handler, frag_handler))) { return -1; }
 	
 
-	camera *_cam = new cameraFPS(
-		glm::vec3(0.0, 0.0, 3.0),
-		glm::radians(60.0f),
-		16.0f/9.0f,
-		0.1f,
-		100.0f
-	);
 
 	//particle sim
-	universe omega(4, 100); //omega is just name i used for all test objects
+	universe omega(8192, 64, 2048); //omega is just name i used for all test objects
 	int thread_count = 256;
 	int block_count = (omega.m_particles->m_particleCount + thread_count - 1) / thread_count; //ensure more than enough blocks of 256 are dispatched
 
@@ -162,6 +155,15 @@ int main(int argc, char** argv) {
 
 	glBindVertexArray(0);
 
+	camera *_cam = new cameraFlight(
+		glm::vec3(0.0, 0.0, 3.0),
+		glm::radians(60.0f),
+		16.0f/9.0f,
+		0.1f,
+		100.0f
+	);
+
+
 
 
 
@@ -169,10 +171,16 @@ int main(int argc, char** argv) {
 	double last_mouseX, last_mouseY;
 	glfwGetCursorPos(window, &last_mouseX, &last_mouseY);
 	
+
+	float universe_time = 0.0f;
+	float universe_frequency = 1.0f / omega.m_frequency;
 	while(!glfwWindowShouldClose(window)) {
 		float current_time = glfwGetTime();
 		float delta_time = current_time - last_time;
 		last_time = current_time;
+
+
+
 		if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
 			glfwSetWindowShouldClose(window, true);
 		}
@@ -206,8 +214,12 @@ int main(int argc, char** argv) {
 		);
 
 		_cam->update();
+		universe_time += delta_time; //this ticks up
+		while(universe_time >= universe_frequency) { //when we are over the frequency it means we are due for a update
+			omega.step(); //run this
+			universe_time -= universe_frequency; //reduce the time by however long a "step" takes if its 1 step per frame, then universe time will be less than the frequency
+		}
 
-		//omega.step();
 		OpenCuda::lockVBO(cuda_positions); //we lock since we about to change it
 		size_t position_size;
 		vec3f* positions = (vec3f*)OpenCuda::getVBO(&position_size, cuda_positions); //this is the ptr to the graphics subsystem vbo with out positions
@@ -250,6 +262,9 @@ int main(int argc, char** argv) {
 			1,
 			glm::value_ptr(_cam->m_position)
 		);
+
+		float scale = 0.05f;
+		glUniform1f(glGetUniformLocation(prog_handler, "u_scale"), scale);
 		
 		glBindVertexArray(octahedron_vao);
 		glDrawElementsInstanced(

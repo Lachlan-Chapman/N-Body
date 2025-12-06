@@ -1,28 +1,42 @@
+#include <curand_kernel.h>
+
 #include "math/vec.hpp"
 #include "graphics/Cuda.hpp"
 #include "simulation/particle.hpp"
 #include "simulation/universe.hpp"
 
-__global__ void initUniverse(particles *p_particles, float p_scale, float p_spread) {
+__global__ void initUniverse(particles *p_particles, float p_radius) {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	if (idx >= p_particles->m_particleCount) return;
 
-	//simple distribution
-	float t = (float)idx / (float)(p_particles->m_particleCount - 1);
+	curandState rng;
+	curand_init(935, idx, 0, &rng);
 
-	p_particles->m_posX[idx] = cosf(t * 6.2831f) * p_spread;
-	p_particles->m_posY[idx] = sinf(t * 6.2831f) * p_spread;
-	p_particles->m_posZ[idx] = 0.0f;
+	float u = curand_uniform(&rng) * 2.0f - 1.0f;
+	float phi = curand_uniform(&rng) * 6.283185f;
+	float sqrt_term = sqrtf(1.0f - (u * u));
 
-	p_particles->m_velX[idx] = 0.0f;
-	p_particles->m_velY[idx] = 0.0f;
-	p_particles->m_velZ[idx] = 0.0f;
+	vec3f dir(
+		sqrt_term * cosf(phi),
+		sqrt_term * sinf(phi),
+		u
+	);
 
-	p_particles->m_mass[idx] = p_scale;
+	float mag = cbrtf(curand_uniform(&rng) * p_radius);
+
+	p_particles->m_posX[idx] = dir.x * mag;
+	p_particles->m_posY[idx] = dir.y * mag;
+	p_particles->m_posZ[idx] = dir.z * mag;
+
+	p_particles->m_velX[idx] = 0;
+	p_particles->m_velY[idx] = 0;
+	p_particles->m_velZ[idx] = 0;
+
+	p_particles->m_mass[idx] = 0.01;
 }
 
-universe::universe(size_t p_particleCount, unsigned int p_frequency) { //struct of arrays init
-	m_frequency = 1.0f / p_frequency;
+universe::universe(size_t p_particleCount, unsigned int p_frequency, float p_radius) { //struct of arrays init
+	m_frequency = p_frequency;
 	m_particles = new particles;
 	m_particles->m_particleCount = p_particleCount;
 	m_particles->m_accX = (float*)Cuda::malloc(p_particleCount * sizeof(float));
@@ -37,14 +51,14 @@ universe::universe(size_t p_particleCount, unsigned int p_frequency) { //struct 
 	m_particles->m_mass = (float*)Cuda::malloc(p_particleCount * sizeof(float));
 	int thread_count = 256;
 	int block_count = (m_particles->m_particleCount + thread_count - 1) / thread_count; //ensure more than enough blocks of 256 are dispatched
-	initUniverse<<<block_count, thread_count>>>(m_particles, 1.0f, 10.0f);
+	initUniverse<<<block_count, thread_count>>>(m_particles, p_radius);
 }
 
 
 
-__constant__ __device__ float epsilon_squared = 1e-4f * 1e-4f;
+__constant__ __device__ float epsilon_squared = 0.05;
 //__constant__ __device__ float G = 6.674e-11f;
-__constant__ __device__ float G = 1; //1 for speed
+__constant__ __device__ float G = 0.1; //1 for speed
 __global__ void calculateForce(particles *p_particles) {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x; //particle ID
 	unsigned int particle_count = p_particles->m_particleCount;

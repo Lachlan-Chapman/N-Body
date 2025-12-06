@@ -69,10 +69,10 @@ namespace Primitives {
 	};
 
 	static const float plane_vertices[] = {
-		-5.0f, -10.0f, -5.0f,
-		 5.0f, -10.0f, -5.0f,
-		 5.0f, -10.0f,  5.0f,
-		-5.0f, -10.0f,  5.0f
+		-5.0f, -25.0f, -5.0f,
+		 5.0f, -25.0f, -5.0f,
+		 5.0f, -25.0f,  5.0f,
+		-5.0f, -25.0f,  5.0f
 	};
 
 	static const unsigned int plane_indices[] = {
