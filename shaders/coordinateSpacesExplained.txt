@@ -1,0 +1,43 @@
+Local Space (model's space)
+this is the coordinat system origin at the object. so if im a cube with my vertercies defined with (1, 1, 1) it is from my center to my vertices
+
+World Space (the cosmic warehouse)
+this is the coordinate system in which all our data exists. so our particle positons, camera positions.
+the entire simulation or game takes place here. it has its own (0, 0, 0)
+
+View Space (camera space)
+this is the world space except the origin is set at the camera. so coordinates are all relative to the camera position.
+the world space is counter rotated and counter translated to originate at the camera looking down -z
+
+Clip Space 
+this is an intermediate step between view space and NDC where the w component holds the depth of the object from the camera.
+it uses the view frustum (fov, far+near plane and aspect ratio) to convert points to be better projected into the NDC
+xyz have been morphed in ways that onced divided by w give us the size of an object to give perspective
+if the camera was rotated in world space, view space is flat so point are counter rotated as if the camera is flat looking down -z.
+w holds the -z or depth value
+
+xyz here are adjusted with the idea they are to be divided by w.
+f = 1 / tan(fov/2)
+a = f / aspect
+b = f
+c = (far + near) / (near - far)
+d = (2 * far * near) / (near - far)
+clip.x = a * x | x is affected by the fov and aspect ratio
+clip.y = b * y | y is affected by the fov
+clip.z = c * z + d | z is re mapped using the far and near planes
+clip.w = -z | w is the depth negated so things in -z dir of the camera have a positive scalar component
+
+NDC - normalised device coordinates (the box)
+this takes the entire clip space and places it into a cube where its origin is (0, 0, 0) is at the center of the projected image (reminder in its own seperate axis so not world or camera space) with width 2
+so all poins live form (-1, -1, -1) to (1, 1, 1)
+by using the w component of the clip space, the points are placed here with perspective where the closer to the +z plane (since we are looking -z) of the cube, the furhter from the cam you are
+where the box represent the view frustum. anything inside is visible
+
+Screen Space
+this is the coordinates of the pixels on screen starting (for OpenGL buffer) in the bottom left of the screen being (0, 0) going to (width, height) in the top right
+
+Local Space -> (Model Matrix) -> World Space
+World Space -> (View Matrix) -> View Space
+View Space -> (Projection Matrix) -> Clip Space
+Clip Space -> (OpenGL) -> NDC 
+NDC -> (OpenGL) -> Screen Space

@@ -54,18 +54,14 @@ namespace OpenGL {
 		return shader; //return the non zero shader handle as success
 	}
 
-	GLuint linkProgram(GLuint p_vertex, GLuint p_frag) {
+	GLuint linkProgram(GLuint *p_shaderHandles, unsigned int p_size) {
 		GLuint program = glCreateProgram();
-		glAttachShader(
-			program,
-			p_vertex
-		);
-
-		glAttachShader(
-			program,
-			p_frag
-		);
-
+		for(unsigned int shader_id = 0; shader_id < p_size; shader_id++) {
+			glAttachShader(
+				program,
+				p_shaderHandles[shader_id]
+			);
+		}
 		glLinkProgram(program);
 
 		GLint success = 0;
@@ -95,10 +91,15 @@ namespace OpenGL {
 		}
 
 		//if link worked, then the "object" files for the shaders are to be removed
-		glDetachShader(program, p_vertex);
-		glDetachShader(program, p_frag);
-		glDeleteShader(p_vertex);
-		glDeleteShader(p_frag);
+		for(unsigned int shader_id = 0; shader_id < p_size; shader_id++) {
+			glDetachShader(
+				program,
+				p_shaderHandles[shader_id]
+			);
+		}
+		for(unsigned int shader_id = 0; shader_id < p_size; shader_id++) {
+			glDeleteShader(p_shaderHandles[shader_id]);
+		}
 		return program; //non zero program handler is a winner
 	}
 
@@ -128,7 +129,7 @@ namespace OpenGL {
 		}
 
 		glfwSetInputMode(window, GLFW_STICKY_KEYS, GLFW_TRUE); //allow keys
-		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); //fix cursor
+		//glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); //fix cursor
 		glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE); //allow mouse delta input
 
 		glfwMakeContextCurrent(window); //set the context bound to this window

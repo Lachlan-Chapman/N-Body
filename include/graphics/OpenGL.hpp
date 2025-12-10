@@ -20,13 +20,13 @@ namespace OpenGL {
 	std::string loadShader(const std::string &p_path);
 	
 	GLuint compileShader(
-		GLenum p_type, //GL_VERTEX_SHADER, GL_FRAGMENT_SHADER etc
+		GLenum p_type, //GL_VERTEX_SHADER, GL_FRAGMENT_SHADER, GL_GEOMETRY_SHADER etc
 		const char* p_src
 	);
 	
-	GLuint linkProgram(
-		GLuint p_vertex,
-		GLuint p_frag
+	GLuint linkProgram( //creates a pipeline obj that performs a pipeline of processes
+		GLuint *p_shaderHandle,
+		unsigned int p_size
 	);
 	
 	GLFWwindow* createContext(

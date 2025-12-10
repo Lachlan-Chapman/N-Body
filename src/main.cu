@@ -43,39 +43,26 @@ int main(int argc, char** argv) {
 		return 1;
 	}
 
-	
-
-	std::string vert_shader = OpenGL::loadShader("shaders/instance.vert");
-	std::string frag_shader = OpenGL::loadShader("shaders/white.frag");
-	if(vert_shader.empty() || frag_shader.empty()) { return 1; }
-	
-	GLuint vert_handler, frag_handler;
-	if(!(vert_handler = OpenGL::compileShader(GL_VERTEX_SHADER, vert_shader.c_str()))) { return -1; }
-	if(!(frag_handler = OpenGL::compileShader(GL_FRAGMENT_SHADER, frag_shader.c_str()))) { return -1; }
-
-	GLuint prog_handler;
-	if(!(prog_handler = OpenGL::linkProgram(vert_handler, frag_handler))) { return -1; }
-	
-
 
 	//particle sim
-	universe omega(8192, 64, 2048); //omega is just name i used for all test objects
+	universe omega(20000, 32, 4096); //omega is just name i used for all test objects
 	int thread_count = 256;
 	int block_count = (omega.m_particles->m_particleCount + thread_count - 1) / thread_count; //ensure more than enough blocks of 256 are dispatched
 
 	//vao handler
-	GLuint octahedron_vao = OpenGL::createVAO();
-	OpenGL::bindVAO(octahedron_vao);
+	GLuint particle_vao = OpenGL::createVAO();
+	OpenGL::bindVAO(particle_vao);
 	
-	//instance vbo
-	GLuint octahedron_vbo = OpenGL::createVBO();
-	OpenGL::bindVBO(octahedron_vbo);
+	//positions vbo
+	GLuint position_vbo = OpenGL::createVBO();
+	OpenGL::bindVBO(position_vbo);
 	OpenGL::setVBO(
-		sizeof(vec3f) * Primitives::octahedron_mesh.d_vertexCount,
-		Primitives::octahedron_vertices
-	);
+		sizeof(vec3f) * omega.m_particles->m_particleCount,
+		nullptr
+	); //allocate raw size
 
-	glEnableVertexAttribArray(0); //make it a mesh vertex
+	//set instancing based on positions
+	glEnableVertexAttribArray(0); //now this vbo which is the positions are data per instance
 	glVertexAttribPointer(
 		0,
 		3,
@@ -84,44 +71,8 @@ int main(int argc, char** argv) {
 		sizeof(vec3f),
 		(void*)0
 	);
+	OpenGL::bindVAO(0);
 
-	//instance ebo
-	GLuint octahedron_ebo = OpenGL::createEBO();
-	OpenGL::bindEBO(octahedron_ebo);
-	OpenGL::setEBO(
-		sizeof(vec<3, unsigned int>) * Primitives::octahedron_mesh.d_faceCount,
-		Primitives::octahedron_faces
-	);
-
-
-	//positions vbo
-	GLuint position_vbo = OpenGL::createVBO();
-	OpenGL::bindVBO(position_vbo);
-	
-	//manual instance testing
-	// vec3f test_pos[2] = {vec3f(0.0f), vec3f(2.0)};
-	// OpenGL::setVBO(
-	// 	sizeof(vec3f) * 2,
-	// 	&test_pos
-	// );
-
-	OpenGL::setVBO(
-		sizeof(vec3f) * omega.m_particles->m_particleCount,
-		nullptr
-	); //allocate raw size
-
-	//set instancing based on positions
-	glEnableVertexAttribArray(1); //now this vbo which is the positions are data per instance
-	glVertexAttribPointer(
-		1,
-		3,
-		GL_FLOAT,
-		GL_FALSE,
-		sizeof(vec3f),
-		(void*)0
-	);
-	glVertexAttribDivisor(1, 1); //1 to 1 mapping of pos vbo data to mesh vbo instance
-	glBindVertexArray(0); //unbind vao marking the end of the setup
 
 	
 	//set init conditions
@@ -133,15 +84,15 @@ int main(int argc, char** argv) {
 	OpenCuda::unlockVBO(cuda_positions);
 
 
+
 	///plane
 	GLuint plane_vao = OpenGL::createVAO();
 	OpenGL::bindVAO(plane_vao);
 
-	// VBO
+	//VBO
 	GLuint plane_vbo = OpenGL::createVBO();
 	OpenGL::bindVBO(plane_vbo);
 	OpenGL::setVBO(sizeof(Primitives::plane_vertices), Primitives::plane_vertices);
-
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(
 		0, 3, GL_FLOAT, GL_FALSE,
@@ -152,9 +103,10 @@ int main(int argc, char** argv) {
 	GLuint plane_ebo = OpenGL::createEBO();
 	OpenGL::bindEBO(plane_ebo);
 	OpenGL::setEBO(sizeof(Primitives::plane_indices), Primitives::plane_indices);
-
 	glBindVertexArray(0);
 
+
+	//camera
 	camera *_cam = new cameraFlight(
 		glm::vec3(0.0, 0.0, 3.0),
 		glm::radians(60.0f),
@@ -163,9 +115,27 @@ int main(int argc, char** argv) {
 		100.0f
 	);
 
+	//shader creation
+	std::string shader_path[3] = {
+		"shaders/passthrough.vert",
+		"shaders/billboard.geom",
+		"shaders/white.frag"
+	};
 
+	std::string shader_src[3];
+	for(int shader_id = 0; shader_id < 3; shader_id++) {
+		shader_src[shader_id] = OpenGL::loadShader(shader_path[shader_id]);
+		if(shader_src[shader_id].empty()) { return 1; }
+	}
 
+	GLuint shader_handles[3];
+	if(!(shader_handles[0] = OpenGL::compileShader(GL_VERTEX_SHADER, shader_src[0].c_str()))) { return -1; }
+	if(!(shader_handles[1] = OpenGL::compileShader(GL_GEOMETRY_SHADER, shader_src[1].c_str()))) { return -1; }
+	if(!(shader_handles[2] = OpenGL::compileShader(GL_FRAGMENT_SHADER, shader_src[2].c_str()))) { return -1; }
+	
 
+	GLuint billboard_handler;
+	if(!(billboard_handler = OpenGL::linkProgram(shader_handles, 3))) { return -1; }
 
 	float last_time = glfwGetTime();
 	double last_mouseX, last_mouseY;
@@ -178,8 +148,6 @@ int main(int argc, char** argv) {
 		float current_time = glfwGetTime();
 		float delta_time = current_time - last_time;
 		last_time = current_time;
-
-
 
 		if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
 			glfwSetWindowShouldClose(window, true);
@@ -194,8 +162,6 @@ int main(int argc, char** argv) {
 			glfwGetKey(window, GLFW_KEY_LEFT_ALT) == GLFW_PRESS,
 			delta_time
 		);
-
-
 
 		double current_mouseX, current_mouseY;
 		glfwGetCursorPos(window, &current_mouseX, &current_mouseY);
@@ -225,57 +191,45 @@ int main(int argc, char** argv) {
 		vec3f* positions = (vec3f*)OpenCuda::getVBO(&position_size, cuda_positions); //this is the ptr to the graphics subsystem vbo with out positions
 		mapPositions<<<block_count, thread_count>>>(positions, omega.m_particles); //the vbo after this contains the positions as vec3
 		OpenCuda::unlockVBO(cuda_positions);
-		
-
-
 
 		//rendering things
 		OpenGL::clearScreen();
 		
-		
-		glUseProgram(prog_handler);
+		glUseProgram(billboard_handler);
 
-		glBindVertexArray(plane_vao);
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		//glBindVertexArray(plane_vao);
+		//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		
 		//set the camera transform for 3d based on cameras state
 		glUniformMatrix4fv(
-			glGetUniformLocation(prog_handler, "u_projection"),
+			glGetUniformLocation(billboard_handler, "u_projection"),
 			1,
 			GL_FALSE,
 			glm::value_ptr(_cam->m_projection)
 		);
 		glUniformMatrix4fv(
-			glGetUniformLocation(prog_handler, "u_view"),
+			glGetUniformLocation(billboard_handler, "u_view"),
 			1,
 			GL_FALSE,
 			glm::value_ptr(_cam->m_view)
 		);
 		glUniformMatrix4fv(
-			glGetUniformLocation(prog_handler, "u_model"),
+			glGetUniformLocation(billboard_handler, "u_model"),
 			1,
 			GL_FALSE,
 			glm::value_ptr(glm::mat4(1.0f))
 		);
 		glUniform3fv(
-			glGetUniformLocation(prog_handler, "u_cameraPosition"),
+			glGetUniformLocation(billboard_handler, "u_cameraPosition"),
 			1,
 			glm::value_ptr(_cam->m_position)
 		);
 
-		float scale = 0.05f;
-		glUniform1f(glGetUniformLocation(prog_handler, "u_scale"), scale);
+		float scale = 0.025f;
+		glUniform1f(glGetUniformLocation(billboard_handler, "u_scale"), scale);
 		
-		glBindVertexArray(octahedron_vao);
-		glDrawElementsInstanced(
-			GL_TRIANGLES,
-			Primitives::octahedron_mesh.d_faceCount * 3,
-			GL_UNSIGNED_INT,
-			(void*)0,
-			omega.m_particles->m_particleCount
-		);
-
-
+		OpenGL::bindVAO(particle_vao);
+		glDrawArrays(GL_POINTS, 0, omega.m_particles->m_particleCount);
 
 		GLenum err;
 		while ((err = glGetError()) != GL_NO_ERROR) {
