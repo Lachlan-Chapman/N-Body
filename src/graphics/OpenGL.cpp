@@ -1,11 +1,13 @@
 #include <iostream>
+#define STB_IMAGE_IMPLEMENTATION
+#include "text/stb_image.h"
 
 #include "graphics/OpenGL.hpp"
 namespace OpenGL {
 	std::string loadShader(const std::string &p_path) {
 		std::ifstream file(p_path);
 		if(!file.is_open()) {
-			std::cerr << "Failed to open " << p_path << "\n";
+			std::cerr << "loadShader(): Failed to open " << p_path << "\n";
 			std::clog << "Working Dir: " << std::filesystem::current_path() << "\n";
 			return "";
 		}
@@ -148,6 +150,8 @@ namespace OpenGL {
 		glViewport(0, 0, buff_width, buff_height);
 		glEnable(GL_PROGRAM_POINT_SIZE);
 
+		glfwSwapInterval(0); //stop vsync
+
 		return window;
 	}
 
@@ -212,4 +216,53 @@ namespace OpenGL {
 			p_usage
 		);
 	}
+
+	GLuint loadPNG(const std::string &p_path, bool p_alpha) {
+		int width, height, channels;
+		stbi_set_flip_vertically_on_load(false);
+
+		unsigned char* data = stbi_load(
+			p_path.c_str(),
+			&width,
+			&height,
+			&channels,
+			0
+		);
+
+		if (!data) {
+			std::cout << "loadPNG(): Failed to load " << p_path << "\n";
+			return 0;
+		}
+
+		GLenum format = (channels == 4 ? GL_RGBA : (channels == 3 ? GL_RGB : GL_RED));
+		GLuint texture_handle;
+		glGenTextures(1, &texture_handle);
+		glBindTexture(GL_TEXTURE_2D, texture_handle);
+
+		glTexImage2D(
+			GL_TEXTURE_2D,
+			0,
+			format,
+			width,
+			height,
+			0,
+			format,
+			GL_UNSIGNED_BYTE,
+			data
+		);
+
+		glGenerateMipmap(GL_TEXTURE_2D);
+
+		//Font settings: linear filtering
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		//Clamp — critical for avoiding UV bleeding
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+		stbi_image_free(data);
+		return texture_handle;
+	}
+
 }

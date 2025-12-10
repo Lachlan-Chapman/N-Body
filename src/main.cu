@@ -16,6 +16,8 @@
 
 #include "simulation/universe.hpp"
 
+#include "text/glyph.hpp"
+
 
 __global__ void mapPositions(vec3f *p_vbo, particles *p_particles) {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -44,8 +46,9 @@ int main(int argc, char** argv) {
 	}
 
 
+
 	//particle sim
-	universe omega(20000, 32, 4096); //omega is just name i used for all test objects
+	universe omega(30000, 32, 2048); //omega is just name i used for all test objects
 	int thread_count = 256;
 	int block_count = (omega.m_particles->m_particleCount + thread_count - 1) / thread_count; //ensure more than enough blocks of 256 are dispatched
 
@@ -85,7 +88,7 @@ int main(int argc, char** argv) {
 
 
 
-	///plane
+	//plane
 	GLuint plane_vao = OpenGL::createVAO();
 	OpenGL::bindVAO(plane_vao);
 
@@ -99,11 +102,59 @@ int main(int argc, char** argv) {
 		3 * sizeof(float), (void*)0
 	);
 
-	// EBO
+	//EBO
 	GLuint plane_ebo = OpenGL::createEBO();
 	OpenGL::bindEBO(plane_ebo);
 	OpenGL::setEBO(sizeof(Primitives::plane_indices), Primitives::plane_indices);
 	glBindVertexArray(0);
+
+	//text
+	if(!Text::buildGlyphMap("res/cascadiaCodeMono.fnt", vec2i(512, 512))) {
+		return 1;
+	}
+
+
+	std::string text_shader_path[2] = {
+		"shaders/text.vert",
+		"shaders/text.frag"
+	};
+	std::string text_shader_src[2];
+	for(int shader_id = 0; shader_id < 2; shader_id++) {
+		text_shader_src[shader_id] = OpenGL::loadShader(text_shader_path[shader_id]);
+		if(text_shader_src[shader_id].empty()) { return 1; }
+	}
+	GLuint txt_shader_handles[2];
+	if(!(txt_shader_handles[0] = OpenGL::compileShader(GL_VERTEX_SHADER, text_shader_src[0].c_str()))) { return -1; }
+	if(!(txt_shader_handles[1] = OpenGL::compileShader(GL_FRAGMENT_SHADER, text_shader_src[1].c_str()))) { return -1; }
+	GLuint txt_handler;
+	if(!(txt_handler = OpenGL::linkProgram(txt_shader_handles, 2))) { return -1; }
+	glUseProgram(txt_handler);
+	glUniform2f(glGetUniformLocation(txt_handler, "u_screenSize"), 3840.0f, 2160.0f);
+	glUniform3f(glGetUniformLocation(txt_handler, "u_color"), 1.0f, 1.0f, 1.0f);
+	glUniform1i(glGetUniformLocation(txt_handler, "u_atlas"), 0); //texture unit 0
+	GLuint text_atlas_handle = OpenGL::loadPNG("res/cascadiaCodeMono.png", true);
+
+
+
+	GLuint text_vao = OpenGL::createVAO();
+	OpenGL::bindVAO(text_vao);
+	GLuint text_vbo = OpenGL::createVBO();
+	OpenGL::bindVBO(text_vbo);
+	OpenGL::setVBO(
+		sizeof(vec4f) * 6 * 128,
+		nullptr,
+		GL_DYNAMIC_DRAW
+	); //allocate enough room for (x,y,u,v) * 6 vertices (2 tris) * 128 chars
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(vec4f), (void*)0); //location 0 will be xy
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(vec4f), (void*)(sizeof(float)*2)); //location 1 will be uv
+	
+	
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); //needed for alpha fonts
+
+
 
 
 	//camera
@@ -195,6 +246,7 @@ int main(int argc, char** argv) {
 		//rendering things
 		OpenGL::clearScreen();
 		
+		
 		glUseProgram(billboard_handler);
 
 		//glBindVertexArray(plane_vao);
@@ -230,6 +282,24 @@ int main(int argc, char** argv) {
 		
 		OpenGL::bindVAO(particle_vao);
 		glDrawArrays(GL_POINTS, 0, omega.m_particles->m_particleCount);
+
+		//text drawing
+		glDisable(GL_DEPTH_TEST); //not needed for on screen text
+		glUseProgram(txt_handler);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, text_atlas_handle);
+		
+		vec4f txt_verts[6*128];
+		int fps = static_cast<float>(1) / delta_time;
+		std::string fps_str = "FPS| " + std::to_string(fps);
+		int vertex_count = Text::buildTextVertices(fps_str, vec3f(0.0f, 0.0f, 1.0f), txt_verts);
+		OpenGL::bindVBO(text_vbo);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vec4f) * vertex_count, txt_verts);
+
+		OpenGL::bindVAO(text_vao);
+		glDrawArrays(GL_TRIANGLES, 0, vertex_count);
+		glEnable(GL_DEPTH_TEST);
+
 
 		GLenum err;
 		while ((err = glGetError()) != GL_NO_ERROR) {

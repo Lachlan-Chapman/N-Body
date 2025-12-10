@@ -53,4 +53,6 @@ namespace OpenGL {
 	void bindEBO(GLuint p_hanlde);
 	//ensure you bind what you wanna set prior, leaving that to the caller as thats how open gl does it
 	void setEBO(size_t p_size, void const *p_data, GLenum p_usage = GL_STATIC_DRAW);
+
+	GLuint loadPNG(const std::string &p_path, bool p_alpha);
 }
