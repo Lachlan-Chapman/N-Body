@@ -207,7 +207,7 @@ int main(int argc, char** argv) {
 	float universe_frequency = 1.0f / omega.m_frequency;
 	int frame_counter = 0; //render 10 frames, we use frames 4th -> 7th
 	while(!glfwWindowShouldClose(window)) {
-		if(frame_counter == 10) {break;}
+		if(frame_counter == 55) {break;}
 		std::clog << "\nFrame ID: " << frame_counter++ << "\n";
 		scopeTimer frameTime("Frame Timer", std::clog);
 		float current_time = glfwGetTime();
@@ -266,6 +266,7 @@ int main(int argc, char** argv) {
 					positions,
 					step_count
 				);
+				cudaDeviceSynchronize(); //wait for kernel to return
 			}
 			OpenCuda::unlockVBO(cuda_positions);
 		}
@@ -327,10 +328,10 @@ int main(int argc, char** argv) {
 			glEnable(GL_DEPTH_TEST);
 	
 	
-			GLenum err;
-			while ((err = glGetError()) != GL_NO_ERROR) {
-				std::cerr << "GL ERROR: " << err << "\n";
-			}
+			// GLenum err;
+			// while ((err = glGetError()) != GL_NO_ERROR) {
+			// 	std::cerr << "GL ERROR: " << err << "\n";
+			// }
 	
 			glfwSwapBuffers(window);
 		}

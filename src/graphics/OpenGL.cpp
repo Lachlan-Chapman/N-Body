@@ -149,6 +149,9 @@ namespace OpenGL {
 		glfwGetFramebufferSize(window, &buff_width, &buff_height);
 		glViewport(0, 0, buff_width, buff_height);
 		glEnable(GL_PROGRAM_POINT_SIZE);
+		glEnable(GL_DEPTH_TEST);
+		glDepthFunc(GL_LESS);
+
 
 		glfwSwapInterval(0); //stop vsync
 

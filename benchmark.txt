@@ -87,3 +87,33 @@ e8a8715 - base
 	Dispatch Simulation Timer: 72.361 us
 	Render Timer: 48425.1 us
 	Frame Timer: 48549 us
+
+
+78d884d - essentially a new base | camera init to view all particles, using instancing over geometry shader
+	Frame ID: 50
+	Input Timer: 20.16 us
+	Simulation Step Timer: 15.221 us
+	Dispatch Simulation Timer: 115.762 us
+	Render Timer: 869793 us
+	Frame Timer: 869960 us
+
+	Frame ID: 51
+	Input Timer: 23.77 us
+	Simulation Step Timer: 19.291 us
+	Dispatch Simulation Timer: 140.922 us
+	Render Timer: 348852 us
+	Frame Timer: 349048 us
+
+	Frame ID: 52
+	Input Timer: 36.921 us
+	Simulation Step Timer: 17.95 us
+	Dispatch Simulation Timer: 132.681 us
+	Render Timer: 1.06987e+06 us
+	Frame Timer: 1.07021e+06 us
+
+	Frame ID: 53
+	Input Timer: 20.58 us
+	Simulation Step Timer: 18.11 us
+	Dispatch Simulation Timer: 141.592 us
+	Render Timer: 430190 us
+	Frame Timer: 430460 us
