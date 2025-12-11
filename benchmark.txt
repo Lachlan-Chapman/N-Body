@@ -1,0 +1,5 @@
+base state
+16384 objects, (256 * 64 should be 64 blocks at 256 threads)
+128 hz,
+256 radius
+curand seed = 935

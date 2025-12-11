@@ -18,6 +18,8 @@
 
 #include "text/glyph.hpp"
 
+#include "benchmark/profiler.hpp"
+
 
 __global__ void mapPositions(vec3f *p_vbo, particles *p_particles) {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -45,10 +47,11 @@ int main(int argc, char** argv) {
 		return 1;
 	}
 
+	scopeTimer::selfTest();
 
 
 	//particle sim
-	universe omega(30000, 32, 2048); //omega is just name i used for all test objects
+	universe omega(16384, 128, 256); //omega is just name i used for all test objects
 	int thread_count = 256;
 	int block_count = (omega.m_particles->m_particleCount + thread_count - 1) / thread_count; //ensure more than enough blocks of 256 are dispatched
 
@@ -196,117 +199,141 @@ int main(int argc, char** argv) {
 	float universe_time = 0.0f;
 	float universe_frequency = 1.0f / omega.m_frequency;
 	while(!glfwWindowShouldClose(window)) {
+		std::clog << "\n";
+		scopeTimer frameTime("Frame Timer", std::clog);
 		float current_time = glfwGetTime();
 		float delta_time = current_time - last_time;
 		last_time = current_time;
-
-		if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-			glfwSetWindowShouldClose(window, true);
+		
+		{
+			scopeTimer inputTimer("Input Timer", std::clog);
+			if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+				glfwSetWindowShouldClose(window, true);
+			}
+			
+			_cam->move(
+				glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS,
+				glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS,
+				glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS,
+				glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS,
+				glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS,
+				glfwGetKey(window, GLFW_KEY_LEFT_ALT) == GLFW_PRESS,
+				delta_time
+			);
+	
+			double current_mouseX, current_mouseY;
+			glfwGetCursorPos(window, &current_mouseX, &current_mouseY);
+					
+			double delta_mouseX = current_mouseX - last_mouseX;
+			double delta_mouseY = current_mouseY - last_mouseY;
+			last_mouseX = current_mouseX;
+			last_mouseY = current_mouseY;
+	
+			_cam->rotate(
+				delta_mouseX,
+				delta_mouseY,
+				glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS,
+				glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS,
+				delta_time
+			);
+	
+			_cam->update();
 		}
 		
-		_cam->move(
-			glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS,
-			glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS,
-			glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS,
-			glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS,
-			glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS,
-			glfwGetKey(window, GLFW_KEY_LEFT_ALT) == GLFW_PRESS,
-			delta_time
-		);
+		{
+			scopeTimer simTimer("Simulation Timer", std::clog);
+			double step_time = 0.0;
+			int step_count = 0;
+			universe_time += delta_time; //this ticks up
+			while(universe_time >= universe_frequency) { //when we are over the frequency it means we are due for a update
+				scopeTimer stepTimer("Step Timer", std::clog);
+				omega.step(); //run this
+				universe_time -= universe_frequency; //reduce the time by however long a "step" takes if its 1 step per frame, then universe time will be less than the frequency
+				++step_count;
+				step_time += stepTimer.microseconds();
+			}
+			std::cout << "Average Step Time (" << step_count << "): " << step_time / (step_count == 0 ? 1 : step_count) << " us\n";
 
-		double current_mouseX, current_mouseY;
-		glfwGetCursorPos(window, &current_mouseX, &current_mouseY);
-				
-		double delta_mouseX = current_mouseX - last_mouseX;
-		double delta_mouseY = current_mouseY - last_mouseY;
-		last_mouseX = current_mouseX;
-		last_mouseY = current_mouseY;
+		}
+		
 
-		_cam->rotate(
-			delta_mouseX,
-			delta_mouseY,
-			glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS,
-			glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS,
-			delta_time
-		);
-
-		_cam->update();
-		universe_time += delta_time; //this ticks up
-		while(universe_time >= universe_frequency) { //when we are over the frequency it means we are due for a update
-			omega.step(); //run this
-			universe_time -= universe_frequency; //reduce the time by however long a "step" takes if its 1 step per frame, then universe time will be less than the frequency
+		{
+			scopeTimer copyTimer("Copy Pos Data Timer", std::clog);
+			OpenCuda::lockVBO(cuda_positions); //we lock since we about to change it
+			size_t position_size;
+			vec3f* positions = (vec3f*)OpenCuda::getVBO(&position_size, cuda_positions); //this is the ptr to the graphics subsystem vbo with out positions
+			mapPositions<<<block_count, thread_count>>>(positions, omega.m_particles); //the vbo after this contains the positions as vec3
+			OpenCuda::unlockVBO(cuda_positions);
 		}
 
-		OpenCuda::lockVBO(cuda_positions); //we lock since we about to change it
-		size_t position_size;
-		vec3f* positions = (vec3f*)OpenCuda::getVBO(&position_size, cuda_positions); //this is the ptr to the graphics subsystem vbo with out positions
-		mapPositions<<<block_count, thread_count>>>(positions, omega.m_particles); //the vbo after this contains the positions as vec3
-		OpenCuda::unlockVBO(cuda_positions);
 
-		//rendering things
-		OpenGL::clearScreen();
-		
-		
-		glUseProgram(billboard_handler);
-
-		//glBindVertexArray(plane_vao);
-		//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-		
-		//set the camera transform for 3d based on cameras state
-		glUniformMatrix4fv(
-			glGetUniformLocation(billboard_handler, "u_projection"),
-			1,
-			GL_FALSE,
-			glm::value_ptr(_cam->m_projection)
-		);
-		glUniformMatrix4fv(
-			glGetUniformLocation(billboard_handler, "u_view"),
-			1,
-			GL_FALSE,
-			glm::value_ptr(_cam->m_view)
-		);
-		glUniformMatrix4fv(
-			glGetUniformLocation(billboard_handler, "u_model"),
-			1,
-			GL_FALSE,
-			glm::value_ptr(glm::mat4(1.0f))
-		);
-		glUniform3fv(
-			glGetUniformLocation(billboard_handler, "u_cameraPosition"),
-			1,
-			glm::value_ptr(_cam->m_position)
-		);
-
-		float scale = 0.025f;
-		glUniform1f(glGetUniformLocation(billboard_handler, "u_scale"), scale);
-		
-		OpenGL::bindVAO(particle_vao);
-		glDrawArrays(GL_POINTS, 0, omega.m_particles->m_particleCount);
-
-		//text drawing
-		glDisable(GL_DEPTH_TEST); //not needed for on screen text
-		glUseProgram(txt_handler);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, text_atlas_handle);
-		
-		vec4f txt_verts[6*128];
-		int fps = static_cast<float>(1) / delta_time;
-		std::string fps_str = "FPS| " + std::to_string(fps);
-		int vertex_count = Text::buildTextVertices(fps_str, vec3f(0.0f, 0.0f, 1.0f), txt_verts);
-		OpenGL::bindVBO(text_vbo);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vec4f) * vertex_count, txt_verts);
-
-		OpenGL::bindVAO(text_vao);
-		glDrawArrays(GL_TRIANGLES, 0, vertex_count);
-		glEnable(GL_DEPTH_TEST);
-
-
-		GLenum err;
-		while ((err = glGetError()) != GL_NO_ERROR) {
-			std::cerr << "GL ERROR: " << err << "\n";
+		{
+			scopeTimer renderTimer("Render Timer", std::clog);
+			//rendering things
+			OpenGL::clearScreen();
+			
+			
+			glUseProgram(billboard_handler);
+	
+			//glBindVertexArray(plane_vao);
+			//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+			
+			//set the camera transform for 3d based on cameras state
+			glUniformMatrix4fv(
+				glGetUniformLocation(billboard_handler, "u_projection"),
+				1,
+				GL_FALSE,
+				glm::value_ptr(_cam->m_projection)
+			);
+			glUniformMatrix4fv(
+				glGetUniformLocation(billboard_handler, "u_view"),
+				1,
+				GL_FALSE,
+				glm::value_ptr(_cam->m_view)
+			);
+			glUniformMatrix4fv(
+				glGetUniformLocation(billboard_handler, "u_model"),
+				1,
+				GL_FALSE,
+				glm::value_ptr(glm::mat4(1.0f))
+			);
+			glUniform3fv(
+				glGetUniformLocation(billboard_handler, "u_cameraPosition"),
+				1,
+				glm::value_ptr(_cam->m_position)
+			);
+	
+			float scale = 0.025f;
+			glUniform1f(glGetUniformLocation(billboard_handler, "u_scale"), scale);
+			
+			OpenGL::bindVAO(particle_vao);
+			glDrawArrays(GL_POINTS, 0, omega.m_particles->m_particleCount);
+	
+			//text drawing
+			glDisable(GL_DEPTH_TEST); //not needed for on screen text
+			glUseProgram(txt_handler);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, text_atlas_handle);
+			
+			vec4f txt_verts[6*128];
+			int fps = static_cast<float>(1) / delta_time;
+			std::string fps_str = "FPS| " + std::to_string(fps);
+			int vertex_count = Text::buildTextVertices(fps_str, vec3f(0.0f, 0.0f, 1.0f), txt_verts);
+			OpenGL::bindVBO(text_vbo);
+			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vec4f) * vertex_count, txt_verts);
+	
+			OpenGL::bindVAO(text_vao);
+			glDrawArrays(GL_TRIANGLES, 0, vertex_count);
+			glEnable(GL_DEPTH_TEST);
+	
+	
+			GLenum err;
+			while ((err = glGetError()) != GL_NO_ERROR) {
+				std::cerr << "GL ERROR: " << err << "\n";
+			}
+	
+			glfwSwapBuffers(window);
 		}
-
-		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
 
