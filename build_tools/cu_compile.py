@@ -4,12 +4,25 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from build_tools.directory import Directory
 
+def getGitHash():
+	try:
+		hash = subprocess.run(
+			["git", "rev-parse", "--short", "HEAD"],
+			capture_output = True,
+			text = True,
+			check = True
+		)
+		return hash.stdout.strip()
+	except:
+		return "idk"
+
 class CuCompiler:
 	CXX: str = "nvcc"
 	THREAD_COUNT: int = 0
 
 	FLAGS: list[str] = [
 		"--std=c++20",
+		f'-DGIT_HASH=\\"{getGitHash()}\\"',
 		"-arch=sm_89",
 		"--diag-suppress=20012"
 	]

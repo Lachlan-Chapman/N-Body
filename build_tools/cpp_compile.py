@@ -4,12 +4,25 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from build_tools.directory import Directory
 
+def getGitHash():
+	try:
+		hash = subprocess.run(
+			["git", "rev-parse", "--short", "HEAD"],
+			capture_output = True,
+			text = True,
+			check = True
+		)
+		return hash.stdout.strip()
+	except:
+		return "idk"
+
 class CppCompiler:
 	CXX: str = "g++"
 	THREAD_COUNT: int = 0  #0 = use all system threads else use this number for threads
 
 	FLAGS: list[str] = [
 		"-std=c++20",
+		f'-DGIT_HASH=\\"{getGitHash()}\\"',
 		"-MMD",
 		"-MP",
 		"-g",

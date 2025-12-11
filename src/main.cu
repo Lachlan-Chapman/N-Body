@@ -20,6 +20,10 @@
 
 #include "benchmark/profiler.hpp"
 
+#ifndef GIT_HASH
+#define GIT_HASH "default"
+#endif
+
 
 __global__ void mapPositions(vec3f *p_vbo, particles *p_particles) {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -337,6 +341,8 @@ int main(int argc, char** argv) {
 		glfwPollEvents();
 	}
 
+
+	std::cout << "GIT HASH " << GIT_HASH << "\n";
 
 	OpenGL::destroyContext(window);
 	glfwTerminate();
