@@ -5,6 +5,14 @@ base state
 curand seed = 935
 no vsync
 
+camera *_cam = new cameraFlight(
+	glm::vec3(0.0, 0.0, 64.0),
+	glm::radians(60.0f),
+	16.0f/9.0f,
+	0.1f,
+	384.0f
+);
+
 e8a8715 - base
 	Input Timer: 17.52 us
 	Step Timer: 38.139 us

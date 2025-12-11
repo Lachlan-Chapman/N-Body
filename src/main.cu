@@ -189,11 +189,11 @@ int main(int argc, char** argv) {
 
 	//camera
 	camera *_cam = new cameraFlight(
-		glm::vec3(0.0, 0.0, 3.0),
+		glm::vec3(0.0, 0.0, 64.0),
 		glm::radians(60.0f),
 		16.0f/9.0f,
 		0.1f,
-		100.0f
+		384.0f
 	);
 
 
@@ -205,7 +205,7 @@ int main(int argc, char** argv) {
 
 	float universe_time = 0.0f;
 	float universe_frequency = 1.0f / omega.m_frequency;
-	int frame_counter = 0; //render 10 frames, we use frames 4th -> 8th
+	int frame_counter = 0; //render 10 frames, we use frames 4th -> 7th
 	while(!glfwWindowShouldClose(window)) {
 		if(frame_counter == 10) {break;}
 		std::clog << "\nFrame ID: " << frame_counter++ << "\n";
