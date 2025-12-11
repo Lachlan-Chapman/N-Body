@@ -5,3 +5,81 @@ base state
 curand seed = 935
 no vsync
 
+e8a8715 - base
+	Input Timer: 17.52 us
+	Step Timer: 38.139 us
+	Step Timer: 3.04 us
+	Step Timer: 2.58 us
+	Step Timer: 2.65 us
+	Step Timer: 2.56 us
+	Step Timer: 3.03 us
+	Step Timer: 2.82 us
+	Average Step Time (7): 7.78986 us
+	Simulation Timer: 67.348 us
+	Copy Pos Data Timer: 62.208 us
+	Render Timer: 22152.8 us
+	Frame Timer: 22316.4 us
+
+	Input Timer: 16.54 us
+	Step Timer: 62.028 us
+	Step Timer: 40.009 us
+	Step Timer: 2.6 us
+	Average Step Time (3): 34.5857 us
+	Simulation Timer: 111.507 us
+	Copy Pos Data Timer: 13.32 us
+	Render Timer: 54532.3 us
+	Frame Timer: 54693.1 us
+
+	Input Timer: 57.509 us
+	Step Timer: 74.818 us
+	Step Timer: 4.93 us
+	Step Timer: 4.23 us
+	Step Timer: 3.95 us
+	Step Timer: 4.16 us
+	Step Timer: 3.73 us
+	Step Timer: 3.74 us
+	Average Step Time (7): 14.134 us
+	Simulation Timer: 122.897 us
+	Copy Pos Data Timer: 27.709 us
+	Render Timer: 24564.7 us
+	Frame Timer: 24803.6 us
+
+	Input Timer: 20.219 us
+	Step Timer: 110.187 us
+	Step Timer: 3.04 us
+	Step Timer: 2.71 us
+	Average Step Time (3): 38.589 us
+	Simulation Timer: 122.277 us
+	Copy Pos Data Timer: 19.009 us
+	Render Timer: 52090.6 us
+	Frame Timer: 52274 us
+
+
+45418df - combined the sim steps into a single kernel that does force, accel, velo, posi and the copy to the vbo with the step count needed for that frame
+	Input Timer: 15.391 us
+	Simulation Step Timer: 83.93 us
+	Dispatch Simulation Timer: 135.24 us
+	Copy Pos Data Timer: 9.51 us
+	Render Timer: 80418.3 us
+	Frame Timer: 80604.7 us
+
+	Input Timer: 21.28 us
+	Simulation Step Timer: 13.66 us
+	Dispatch Simulation Timer: 82.721 us
+	Copy Pos Data Timer: 8.45 us
+	Render Timer: 57179.3 us
+	Frame Timer: 57314.5 us
+
+	Input Timer: 22.29 us
+	Simulation Step Timer: 63.111 us
+	Dispatch Simulation Timer: 125.961 us
+	Copy Pos Data Timer: 8.76 us
+	Render Timer: 108569 us
+	Frame Timer: 108746 us
+
+	Input Timer: 18.27 us
+	Simulation Step Timer: 11.55 us
+	Dispatch Simulation Timer: 64.441 us
+	Copy Pos Data Timer: 8.28 us
+	Render Timer: 70594.1 us
+	Frame Timer: 70703.5 us

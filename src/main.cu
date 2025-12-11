@@ -245,31 +245,25 @@ int main(int argc, char** argv) {
 		}
 		
 		{
-			scopeTimer simTimer("Simulation Timer", std::clog);
-			double step_time = 0.0;
+			scopeTimer dispatchTimer("Dispatch Simulation Timer", std::clog);
 			int step_count = 0;
 			universe_time += delta_time; //this ticks up
 			while(universe_time >= universe_frequency) { //when we are over the frequency it means we are due for a update
-				scopeTimer stepTimer("Step Timer", std::clog);
-				omega.step(); //run this
 				universe_time -= universe_frequency; //reduce the time by however long a "step" takes if its 1 step per frame, then universe time will be less than the frequency
 				++step_count;
-				step_time += stepTimer.microseconds();
 			}
-			std::cout << "Average Step Time (" << step_count << "): " << step_time / (step_count == 0 ? 1 : step_count) << " us\n";
-
-		}
-		
-
-		{
-			scopeTimer copyTimer("Copy Pos Data Timer", std::clog);
 			OpenCuda::lockVBO(cuda_positions); //we lock since we about to change it
 			size_t position_size;
 			vec3f* positions = (vec3f*)OpenCuda::getVBO(&position_size, cuda_positions); //this is the ptr to the graphics subsystem vbo with out positions
-			mapPositions<<<block_count, thread_count>>>(positions, omega.m_particles); //the vbo after this contains the positions as vec3
+			{
+				scopeTimer stepTimer("Simulation Step Timer", std::clog);
+				omega.step(
+					positions,
+					step_count
+				);
+			}
 			OpenCuda::unlockVBO(cuda_positions);
 		}
-
 
 		{
 			scopeTimer renderTimer("Render Timer", std::clog);

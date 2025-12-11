@@ -35,6 +35,8 @@ __global__ void initUniverse(particles *p_particles, float p_radius) {
 	p_particles->m_mass[idx] = 0.01;
 }
 
+
+
 universe::universe(size_t p_particleCount, unsigned int p_frequency, float p_radius) { //struct of arrays init
 	m_frequency = p_frequency;
 	m_particles = new particles;
@@ -59,6 +61,8 @@ universe::universe(size_t p_particleCount, unsigned int p_frequency, float p_rad
 __constant__ __device__ float epsilon_squared = 0.05;
 //__constant__ __device__ float G = 6.674e-11f;
 __constant__ __device__ float G = 0.1; //1 for speed
+
+
 __global__ void calculateForce(particles *p_particles) {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x; //particle ID
 	unsigned int particle_count = p_particles->m_particleCount;
@@ -85,7 +89,7 @@ __global__ void calculateForce(particles *p_particles) {
 		);
 		
 		vec3f dir = other_pos - my_pos;
-		float dist_square = dir.squared_magnitude(); //gpu has fast inverse (need to benchmark again fast_inverse from the vec class)
+		float dist_square = dir.sqauredMagnitude(); //gpu has fast inverse (need to benchmark again fast_inverse from the vec class)
 		dist_square += epsilon_squared; //softening the distance to stop 0 distance calculations
 		
 		float inv_dist = rsqrtf(dist_square);
@@ -122,13 +126,82 @@ __global__ void integrateAcceleration(particles *p_particles, float p_dt) {
 	p_particles->m_posZ[idx] += p_particles->m_velZ[idx] * p_dt;
 }
 
+//note p_particles is soa
+__global__ void stepSimulation(particles *p_particles, vec3f *p_positionVBO, float p_dt, int p_stepCount) { //combined kernel that does accel, force, pos, copy data to pen gl buff
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	if(idx >= p_particles->m_particleCount) { return; }
+
+	for(int step_id = 0; step_id < p_stepCount; step_id++) {
+		vec3f my_pos(
+			p_particles->m_posX[idx],
+			p_particles->m_posY[idx],
+			p_particles->m_posZ[idx]
+		);
+
+
+		//calculate acceleration
+		vec3f acceleration(0.0f);
+		for(int particle_id = 0; particle_id < p_particles->m_particleCount; particle_id++) {
+			if(idx == particle_id) { continue; }
+			//force due to gravity
+			vec3f other_pos(
+				p_particles->m_posX[particle_id],
+				p_particles->m_posY[particle_id],
+				p_particles->m_posZ[particle_id]
+			);
+
+			vec3f direction = other_pos - my_pos;
+			float dist_sqaured = direction.sqauredMagnitude();
+			float inv_dist = rsqrt(dist_sqaured);
+			inv_dist += epsilon_squared;
+			float inv_dist_cubed = inv_dist * inv_dist * inv_dist;
+
+			float other_mass = p_particles->m_mass[particle_id];
+			acceleration += direction * (G * other_mass * inv_dist_cubed);
+		}
+		
+		p_particles->m_accX[idx] = acceleration[0];
+		p_particles->m_accY[idx] = acceleration[1];
+		p_particles->m_accZ[idx] = acceleration[2];
+		
+		//calculate velocity
+		p_particles->m_velX[idx] += p_particles->m_accX[idx] * p_dt;
+		p_particles->m_velY[idx] += p_particles->m_accY[idx] * p_dt;
+		p_particles->m_velZ[idx] += p_particles->m_accZ[idx] * p_dt;
+
+		//calculate position
+		p_particles->m_posX[idx] += p_particles->m_velX[idx] * p_dt;
+		p_particles->m_posY[idx] += p_particles->m_velY[idx] * p_dt;
+		p_particles->m_posZ[idx] += p_particles->m_velZ[idx] * p_dt;
+	}
+	//copy final pos to opengl buffer
+	p_positionVBO[idx] = vec3f(
+		p_particles->m_posX[idx],
+		p_particles->m_posY[idx],
+		p_particles->m_posZ[idx]
+	);
+
+}
+
 void universe::integrate() {
 	int thread_count = 256;
 	int block_count = (m_particles->m_particleCount + thread_count - 1) / thread_count; //ensure more than enough blocks of 256 are dispatched
 	integrateAcceleration<<<block_count, thread_count>>>(m_particles, 1.0f / m_frequency);
 }
 
-void universe::step() {
-	calculateAcceleration();
-	integrate();
+
+
+void universe::step(vec3f *p_positionVBO, int p_stepCount) {
+	//calculateAcceleration();
+	//integrate();
+
+	//using combined calculation kernel
+	int thread_count = 256;
+	int block_count = (m_particles->m_particleCount + thread_count - 1) / thread_count;
+	stepSimulation<<<block_count, thread_count>>>(
+		m_particles,
+		p_positionVBO,
+		1.0f / m_frequency,
+		p_stepCount
+	);
 }

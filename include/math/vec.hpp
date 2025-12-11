@@ -119,7 +119,7 @@ struct vec_operation : public vec_data<t_dimension, t_type> {
 		}
 	}
 
-	HD constexpr double squared_magnitude() const {
+	HD constexpr double sqauredMagnitude() const {
 		double len = 0;
 		for(std::size_t dim = 0; dim < t_dimension; dim++) {
 			len += m_elem[dim] * m_elem[dim];
@@ -128,7 +128,7 @@ struct vec_operation : public vec_data<t_dimension, t_type> {
 	};
 
 	HD constexpr double magnitude() const {
-		double length = squared_magnitude();
+		double length = sqauredMagnitude();
 		return static_cast<double>(fast_inverse(static_cast<float>(length))) * length;
 	}
 
