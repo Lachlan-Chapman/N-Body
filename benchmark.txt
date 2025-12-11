@@ -55,31 +55,27 @@ e8a8715 - base
 	Frame Timer: 52274 us
 
 
-45418df - combined the sim steps into a single kernel that does force, accel, velo, posi and the copy to the vbo with the step count needed for that frame
-	Input Timer: 15.391 us
-	Simulation Step Timer: 83.93 us
-	Dispatch Simulation Timer: 135.24 us
-	Copy Pos Data Timer: 9.51 us
-	Render Timer: 80418.3 us
-	Frame Timer: 80604.7 us
+447af92 - combined the sim steps into a single kernel that does force, accel, velo, posi and the copy to the vbo with the step count needed for that frame
+	Input Timer: 16.22 us
+	Simulation Step Timer: 8.65 us
+	Dispatch Simulation Timer: 74.5 us
+	Render Timer: 97028.1 us
+	Frame Timer: 97138.1 us
 
-	Input Timer: 21.28 us
-	Simulation Step Timer: 13.66 us
-	Dispatch Simulation Timer: 82.721 us
-	Copy Pos Data Timer: 8.45 us
-	Render Timer: 57179.3 us
-	Frame Timer: 57314.5 us
+	Input Timer: 19.55 us
+	Simulation Step Timer: 8.94 us
+	Dispatch Simulation Timer: 71.141 us
+	Render Timer: 40443.1 us
+	Frame Timer: 40550.5 us
 
-	Input Timer: 22.29 us
-	Simulation Step Timer: 63.111 us
-	Dispatch Simulation Timer: 125.961 us
-	Copy Pos Data Timer: 8.76 us
-	Render Timer: 108569 us
-	Frame Timer: 108746 us
+	Input Timer: 19.741 us
+	Simulation Step Timer: 11.69 us
+	Dispatch Simulation Timer: 128.02 us
+	Render Timer: 96469.8 us
+	Frame Timer: 96639.6 us
 
-	Input Timer: 18.27 us
-	Simulation Step Timer: 11.55 us
-	Dispatch Simulation Timer: 64.441 us
-	Copy Pos Data Timer: 8.28 us
-	Render Timer: 70594.1 us
-	Frame Timer: 70703.5 us
+	Input Timer: 28.85 us
+	Simulation Step Timer: 9.11 us
+	Dispatch Simulation Timer: 72.361 us
+	Render Timer: 48425.1 us
+	Frame Timer: 48549 us

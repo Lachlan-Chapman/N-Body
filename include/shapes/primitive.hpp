@@ -68,15 +68,42 @@ namespace Primitives {
 		3, 3, 1
 	};
 
-	static const float plane_vertices[] = {
+	static float const plane_vertices[] = {
 		-5.0f, -25.0f, -5.0f,
 		 5.0f, -25.0f, -5.0f,
 		 5.0f, -25.0f,  5.0f,
 		-5.0f, -25.0f,  5.0f
 	};
 
-	static const unsigned int plane_indices[] = {
+	static unsigned int const plane_indices[] = {
 		0, 1, 2,
 		2, 3, 0
+	};
+
+	static vec3f const quad_vertices[] = {
+		vec3f(-0.5f,  0.0f,  0.5f),
+		vec3f( 0.5f,  0.0f,  0.5f),
+		vec3f(-0.5f,  0.0f, -0.5f),
+		vec3f( 0.5f,  0.0f, -0.5f)
+	};
+
+	static unsigned int const quad_edges[] = {
+		0, 1,
+		1, 2,
+		2, 0,
+		1, 3,
+		3, 2
+	};
+
+	static unsigned int const quad_faces[] = {
+		0, 1, 2,
+		1, 3, 2
+	};
+
+	static mesh const quad_mesh = {
+		quad_vertices,
+		quad_edges,
+		quad_faces,
+		4, 5, 2
 	};
 }

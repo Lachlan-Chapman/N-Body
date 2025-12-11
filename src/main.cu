@@ -62,6 +62,30 @@ int main(int argc, char** argv) {
 	//vao handler
 	GLuint particle_vao = OpenGL::createVAO();
 	OpenGL::bindVAO(particle_vao);
+
+	//instance vbo, ebo, attribptr
+	GLuint quad_vbo = OpenGL::createVBO();
+	OpenGL::bindVBO(quad_vbo);
+	OpenGL::setVBO(
+		sizeof(vec3f) * Primitives::quad_mesh.d_vertexCount,
+		Primitives::quad_vertices
+	); //malloc and set qaud vertex data
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(
+		0,
+		3,
+		GL_FLOAT,
+		GL_FALSE,
+		sizeof(vec3f),
+		(void*)0
+	);
+	GLuint quad_ebo = OpenGL::createEBO();
+	OpenGL::bindEBO(quad_ebo);
+	OpenGL::setEBO(
+		sizeof(Primitives::quad_faces), //3 vertices per face
+		Primitives::quad_faces,
+		GL_STATIC_DRAW
+	);
 	
 	//positions vbo
 	GLuint position_vbo = OpenGL::createVBO();
@@ -72,15 +96,35 @@ int main(int argc, char** argv) {
 	); //allocate raw size
 
 	//set instancing based on positions
-	glEnableVertexAttribArray(0); //now this vbo which is the positions are data per instance
+	glEnableVertexAttribArray(1); //now this vbo which is the positions are data per quad instance
 	glVertexAttribPointer(
-		0,
+		1,
 		3,
 		GL_FLOAT,
 		GL_FALSE,
 		sizeof(vec3f),
 		(void*)0
 	);
+	glVertexAttribDivisor(1, 1); //1:1 mapping from pos data to quad instance
+	//shader creation
+	std::string shader_path[2] = {
+		"shaders/billboard_instance.vert",
+		"shaders/white.frag"
+	};
+
+	std::string shader_src[2];
+	for(int shader_id = 0; shader_id < 2; shader_id++) {
+		shader_src[shader_id] = OpenGL::loadShader(shader_path[shader_id]);
+		if(shader_src[shader_id].empty()) { return 1; }
+	}
+
+	GLuint shader_handles[2];
+	if(!(shader_handles[0] = OpenGL::compileShader(GL_VERTEX_SHADER, shader_src[0].c_str()))) { return -1; }
+	if(!(shader_handles[1] = OpenGL::compileShader(GL_FRAGMENT_SHADER, shader_src[1].c_str()))) { return -1; }
+
+	GLuint billboard_handler;
+	if(!(billboard_handler = OpenGL::linkProgram(shader_handles, 2))) { return -1; }
+
 	OpenGL::bindVAO(0);
 
 
@@ -93,27 +137,6 @@ int main(int argc, char** argv) {
 	mapPositions<<<block_count, thread_count>>>(positions, omega.m_particles); //the vbo after this contains the positions as vec3
 	OpenCuda::unlockVBO(cuda_positions);
 
-
-
-	//plane
-	GLuint plane_vao = OpenGL::createVAO();
-	OpenGL::bindVAO(plane_vao);
-
-	//VBO
-	GLuint plane_vbo = OpenGL::createVBO();
-	OpenGL::bindVBO(plane_vbo);
-	OpenGL::setVBO(sizeof(Primitives::plane_vertices), Primitives::plane_vertices);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(
-		0, 3, GL_FLOAT, GL_FALSE,
-		3 * sizeof(float), (void*)0
-	);
-
-	//EBO
-	GLuint plane_ebo = OpenGL::createEBO();
-	OpenGL::bindEBO(plane_ebo);
-	OpenGL::setEBO(sizeof(Primitives::plane_indices), Primitives::plane_indices);
-	glBindVertexArray(0);
 
 	//text
 	if(!Text::buildGlyphMap("res/cascadiaCodeMono.fnt", vec2i(512, 512))) {
@@ -173,27 +196,7 @@ int main(int argc, char** argv) {
 		100.0f
 	);
 
-	//shader creation
-	std::string shader_path[3] = {
-		"shaders/passthrough.vert",
-		"shaders/billboard.geom",
-		"shaders/white.frag"
-	};
 
-	std::string shader_src[3];
-	for(int shader_id = 0; shader_id < 3; shader_id++) {
-		shader_src[shader_id] = OpenGL::loadShader(shader_path[shader_id]);
-		if(shader_src[shader_id].empty()) { return 1; }
-	}
-
-	GLuint shader_handles[3];
-	if(!(shader_handles[0] = OpenGL::compileShader(GL_VERTEX_SHADER, shader_src[0].c_str()))) { return -1; }
-	if(!(shader_handles[1] = OpenGL::compileShader(GL_GEOMETRY_SHADER, shader_src[1].c_str()))) { return -1; }
-	if(!(shader_handles[2] = OpenGL::compileShader(GL_FRAGMENT_SHADER, shader_src[2].c_str()))) { return -1; }
-	
-
-	GLuint billboard_handler;
-	if(!(billboard_handler = OpenGL::linkProgram(shader_handles, 3))) { return -1; }
 
 	float last_time = glfwGetTime();
 	double last_mouseX, last_mouseY;
@@ -202,8 +205,10 @@ int main(int argc, char** argv) {
 
 	float universe_time = 0.0f;
 	float universe_frequency = 1.0f / omega.m_frequency;
+	int frame_counter = 0; //render 10 frames, we use frames 4th -> 8th
 	while(!glfwWindowShouldClose(window)) {
-		std::clog << "\n";
+		if(frame_counter == 10) {break;}
+		std::clog << "\nFrame ID: " << frame_counter++ << "\n";
 		scopeTimer frameTime("Frame Timer", std::clog);
 		float current_time = glfwGetTime();
 		float delta_time = current_time - last_time;
@@ -272,10 +277,7 @@ int main(int argc, char** argv) {
 			
 			
 			glUseProgram(billboard_handler);
-	
-			//glBindVertexArray(plane_vao);
-			//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-			
+
 			//set the camera transform for 3d based on cameras state
 			glUniformMatrix4fv(
 				glGetUniformLocation(billboard_handler, "u_projection"),
@@ -300,12 +302,12 @@ int main(int argc, char** argv) {
 				1,
 				glm::value_ptr(_cam->m_position)
 			);
-	
+			
 			float scale = 0.025f;
 			glUniform1f(glGetUniformLocation(billboard_handler, "u_scale"), scale);
 			
 			OpenGL::bindVAO(particle_vao);
-			glDrawArrays(GL_POINTS, 0, omega.m_particles->m_particleCount);
+			glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, omega.m_particles->m_particleCount);
 	
 			//text drawing
 			glDisable(GL_DEPTH_TEST); //not needed for on screen text
