@@ -165,7 +165,7 @@ void octree::compute(universe const &p_universe) {
 				break;
 		}
 	}
-	std::cout << "Universe Mass " << m_nodes[0].d_mass << "\n";
+	//std::cout << "Universe Mass " << m_nodes[0].d_mass << "\n";
 	
 }
 
@@ -193,7 +193,7 @@ void octree::reset(universe const &p_universe) {
 		) + 2
 	); 
 	unsigned int full_tree_count = (std::pow(8, m_maxDepth - 1) - 1.0) * 0.15; //~= (8^(maxDepth - 1) - 1) / 7
-	std::cout << "allowing " << full_tree_count << " Nodes\n";
+	//std::cout << "allowing " << full_tree_count << " Nodes\n";
 	m_nodes = (octreeNode*)Cuda::unifiedMalloc(sizeof(octreeNode) * full_tree_count);
 	m_nodeArrayPtr = 0; //reset ptr
 }

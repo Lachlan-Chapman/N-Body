@@ -14,106 +14,28 @@ camera *_cam = new cameraFlight(
 );
 
 e8a8715 - base
-	Input Timer: 17.52 us
-	Step Timer: 38.139 us
-	Step Timer: 3.04 us
-	Step Timer: 2.58 us
-	Step Timer: 2.65 us
-	Step Timer: 2.56 us
-	Step Timer: 3.03 us
-	Step Timer: 2.82 us
-	Average Step Time (7): 7.78986 us
-	Simulation Timer: 67.348 us
-	Copy Pos Data Timer: 62.208 us
-	Render Timer: 22152.8 us
 	Frame Timer: 22316.4 us
-
-	Input Timer: 16.54 us
-	Step Timer: 62.028 us
-	Step Timer: 40.009 us
-	Step Timer: 2.6 us
-	Average Step Time (3): 34.5857 us
-	Simulation Timer: 111.507 us
-	Copy Pos Data Timer: 13.32 us
-	Render Timer: 54532.3 us
 	Frame Timer: 54693.1 us
-
-	Input Timer: 57.509 us
-	Step Timer: 74.818 us
-	Step Timer: 4.93 us
-	Step Timer: 4.23 us
-	Step Timer: 3.95 us
-	Step Timer: 4.16 us
-	Step Timer: 3.73 us
-	Step Timer: 3.74 us
-	Average Step Time (7): 14.134 us
-	Simulation Timer: 122.897 us
-	Copy Pos Data Timer: 27.709 us
-	Render Timer: 24564.7 us
 	Frame Timer: 24803.6 us
-
-	Input Timer: 20.219 us
-	Step Timer: 110.187 us
-	Step Timer: 3.04 us
-	Step Timer: 2.71 us
-	Average Step Time (3): 38.589 us
-	Simulation Timer: 122.277 us
-	Copy Pos Data Timer: 19.009 us
-	Render Timer: 52090.6 us
 	Frame Timer: 52274 us
 
 
 447af92 - combined the sim steps into a single kernel that does force, accel, velo, posi and the copy to the vbo with the step count needed for that frame
-	Input Timer: 16.22 us
-	Simulation Step Timer: 8.65 us
-	Dispatch Simulation Timer: 74.5 us
-	Render Timer: 97028.1 us
 	Frame Timer: 97138.1 us
-
-	Input Timer: 19.55 us
-	Simulation Step Timer: 8.94 us
-	Dispatch Simulation Timer: 71.141 us
-	Render Timer: 40443.1 us
 	Frame Timer: 40550.5 us
-
-	Input Timer: 19.741 us
-	Simulation Step Timer: 11.69 us
-	Dispatch Simulation Timer: 128.02 us
-	Render Timer: 96469.8 us
 	Frame Timer: 96639.6 us
-
-	Input Timer: 28.85 us
-	Simulation Step Timer: 9.11 us
-	Dispatch Simulation Timer: 72.361 us
-	Render Timer: 48425.1 us
 	Frame Timer: 48549 us
 
 
 78d884d - essentially a new base | camera init to view all particles, using instancing over geometry shader
 	Frame ID: 50
-	Input Timer: 20.16 us
-	Simulation Step Timer: 15.221 us
-	Dispatch Simulation Timer: 115.762 us
-	Render Timer: 869793 us
 	Frame Timer: 869960 us
 
 	Frame ID: 51
-	Input Timer: 23.77 us
-	Simulation Step Timer: 19.291 us
-	Dispatch Simulation Timer: 140.922 us
-	Render Timer: 348852 us
 	Frame Timer: 349048 us
 
 	Frame ID: 52
-	Input Timer: 36.921 us
-	Simulation Step Timer: 17.95 us
-	Dispatch Simulation Timer: 132.681 us
-	Render Timer: 1.06987e+06 us
 	Frame Timer: 1.07021e+06 us
 
 	Frame ID: 53
-	Input Timer: 20.58 us
-	Simulation Step Timer: 18.11 us
-	Dispatch Simulation Timer: 141.592 us
-	Render Timer: 430190 us
 	Frame Timer: 430460 us

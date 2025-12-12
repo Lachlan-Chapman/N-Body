@@ -44,11 +44,8 @@ int main(int argc, char** argv) {
 
 
 	//particle sim
-	universe omega(16384, 5, 256); //omega is just name i used for all test objects | bechmark obj
-	universe epsilon(16384, 128, 16);
+	universe omega(16384, 128, 256); //omega is just name i used for all test objects | bechmark obj
 	octree *alpha = (octree*)Cuda::unifiedMalloc(sizeof(octree));
-	//return 1;
-	
 
 	int thread_count = 256;
 	int block_count = (omega.m_particles->m_particleCount + thread_count - 1) / thread_count; //ensure more than enough blocks of 256 are dispatched
@@ -198,7 +195,7 @@ int main(int argc, char** argv) {
 	float universe_frequency = 1.0f / omega.m_frequency;
 	int frame_counter = 0; //render 10 frames, we use frames 4th -> 7th
 	while(!glfwWindowShouldClose(window)) {
-		//if(frame_counter == 55) {break;}
+		if(frame_counter == 55) {break;}
 		std::clog << "\nFrame ID: " << frame_counter++ << "\n";
 		scopeTimer frameTime("Frame Timer", std::clog);
 		float current_time = glfwGetTime();
@@ -254,19 +251,24 @@ int main(int argc, char** argv) {
 				universe_time -= universe_frequency; //reduce the time by however long a "step" takes if its 1 step per frame, then universe time will be less than the frequency
 				++step_count;
 			}
-			OpenCuda::lockVBO(cuda_positions); //we lock since we about to change it
-			size_t position_size;
-			vec3f* positions = (vec3f*)OpenCuda::getVBO(&position_size, cuda_positions); //this is the ptr to the graphics subsystem vbo with out positions
-			{
-				scopeTimer stepTimer("Simulation Step Timer", std::clog);
-				omega.step(
-					alpha,
-					positions,
-					step_count
-				);
-				cudaDeviceSynchronize(); //wait for kernel to return
+			if(step_count) {
+				OpenCuda::lockVBO(cuda_positions); //we lock since we about to change it
+				size_t position_size;
+				vec3f* positions = (vec3f*)OpenCuda::getVBO(&position_size, cuda_positions); //this is the ptr to the graphics subsystem vbo with out positions
+				float step_time;
+				{
+					scopeTimer stepTimer("All Simulation Step Time", std::clog);
+					omega.step(
+						alpha,
+						positions,
+						step_count
+					);
+					cudaDeviceSynchronize(); //wait for kernel to return
+					step_time = stepTimer.microseconds();
+				}
+				OpenCuda::unlockVBO(cuda_positions);
+				std::cout << "Single Simulation Step Time: " << step_time / step_count << "us\n";
 			}
-			OpenCuda::unlockVBO(cuda_positions);
 		}
 
 		{

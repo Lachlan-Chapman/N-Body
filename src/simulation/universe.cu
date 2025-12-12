@@ -73,7 +73,7 @@ __constant__ __device__ float G = 0.1; //1 for speed
 //big enough for about > 9.8 billion points universe using 12 depth and 8 nodes
 #define MAX_STACK 92
 //distance threshold whether to approximate or not
-#define THETA 10
+#define THETA 1
 
 __global__ void stepSimulation(octree *p_octree, particles *p_particles, vec3f *p_positionVBO, float p_dt, int p_stepCount) {
 	int pid = blockIdx.x * blockDim.x + threadIdx.x;
@@ -115,11 +115,12 @@ __global__ void stepSimulation(octree *p_octree, particles *p_particles, vec3f *
 			}
 
 			vec3f direction = current_com - particle_position; //common for all types, needed before internal check to see if we approximate or add to stack
-			float dist_squared = direction.sqauredMagnitude();
+			float dist_squared = direction.sqauredMagnitude() + epsilon_squared; //soften here to also prevent / 0 in the distance check 
+			float inv_dist = rsqrt(dist_squared);
 
 			if(node.d_state == nodeState::INTERNAL) {
 				float node_size = node.d_dimensions.max(); //largest length of the AABB
-				if(dist_squared < (THETA*THETA * node_size*node_size)) { //checking the regular d / s < theta | theta is the limit on how many node_sizes away we are. if we are too close, then push to the stack
+				if((node_size * inv_dist) > THETA) {
 					for(int child_id = 0; child_id < 8; child_id++) { //check if i am a child of that node
 						if(stack_ptr < MAX_STACK) {
 							stack[stack_ptr++] = node.d_childStart + child_id; //add node ids to now re check
@@ -130,7 +131,7 @@ __global__ void stepSimulation(octree *p_octree, particles *p_particles, vec3f *
 			}
 
 			//get accleartion, LEAF & INTERNAL nodes have values directly set, BEDROCK nodes if self containing will adjust the set values
-			float inv_dist = rsqrt(dist_squared + epsilon_squared);
+			
 			float inv_dist_cubed = inv_dist * inv_dist * inv_dist;
 			acceleration += direction * (G * current_mass * inv_dist_cubed);	
 		}
