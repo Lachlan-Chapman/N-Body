@@ -44,15 +44,13 @@ int main(int argc, char** argv) {
 
 
 	//particle sim
-	octree alpha;
 	universe omega(16384, 128, 256); //omega is just name i used for all test objects | bechmark obj
-	universe beta(16384, 128, 256); //test octree obj
-	std::cout << "boutta build octree\n";
+	universe epsilon(16384, 128, 16);
 	{
-		scopeTimer buildTimer("Tree Build Timer", std::clog);
-		alpha.build(beta);
+		octree alpha;
+		scopeTimer buildTimer("A | Tree Build Timer", std::clog);
+		alpha.build(epsilon);
 	}
-	std::cout << "built octree\n";
 	return 1;
 	
 
