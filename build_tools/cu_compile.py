@@ -22,7 +22,7 @@ class CuCompiler:
 
 	FLAGS: list[str] = [
 		"--std=c++20",
-		f'-DGIT_HASH=\\"{getGitHash()}\\"',
+		f'-DGIT_HASH="{getGitHash()}"',
 		"-arch=sm_89",
 		"--diag-suppress=20012"
 	]

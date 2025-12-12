@@ -38,6 +38,16 @@ namespace Cuda {
 		return _ptr;
 	}
 
+	void* unifiedMalloc(size_t p_size) {
+		void *_ptr;
+		cudaError_t _err = cudaMallocManaged(&_ptr, p_size);
+		if(_err != cudaSuccess) {
+			std::cerr << "ERROR: Cuda::malloc() | " << cudaGetErrorString(_err) << std::endl;
+			return nullptr;
+		}
+		return _ptr;
+	}
+
 	void free(void *p_ptr) {
 		cudaFree(p_ptr);
 	}

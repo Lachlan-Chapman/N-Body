@@ -24,13 +24,17 @@ __global__ void initUniverse(particles *p_particles, float p_radius) {
 
 	float mag = cbrtf(curand_uniform(&rng) * p_radius);
 
-	p_particles->m_posX[idx] = dir.x * mag;
-	p_particles->m_posY[idx] = dir.y * mag;
-	p_particles->m_posZ[idx] = dir.z * mag;
+	p_particles->m_accX[idx] = 0;
+	p_particles->m_accY[idx] = 0;
+	p_particles->m_accZ[idx] = 0;
 
 	p_particles->m_velX[idx] = 0;
 	p_particles->m_velY[idx] = 0;
 	p_particles->m_velZ[idx] = 0;
+
+	p_particles->m_posX[idx] = dir.x * mag;
+	p_particles->m_posY[idx] = dir.y * mag;
+	p_particles->m_posZ[idx] = dir.z * mag;
 
 	p_particles->m_mass[idx] = 0.01;
 }
@@ -41,22 +45,23 @@ universe::universe(size_t p_particleCount, unsigned int p_frequency, float p_rad
 	m_frequency = p_frequency;
 	m_particles = new particles;
 	m_particles->m_particleCount = p_particleCount;
-	m_particles->m_accX = (float*)Cuda::malloc(p_particleCount * sizeof(float));
-	m_particles->m_accY = (float*)Cuda::malloc(p_particleCount * sizeof(float)); 
-	m_particles->m_accZ = (float*)Cuda::malloc(p_particleCount * sizeof(float));
-	m_particles->m_velX = (float*)Cuda::malloc(p_particleCount * sizeof(float));
-	m_particles->m_velY = (float*)Cuda::malloc(p_particleCount * sizeof(float));
-	m_particles->m_velZ = (float*)Cuda::malloc(p_particleCount * sizeof(float));
-	m_particles->m_posX = (float*)Cuda::malloc(p_particleCount * sizeof(float));
-	m_particles->m_posY = (float*)Cuda::malloc(p_particleCount * sizeof(float));
-	m_particles->m_posZ = (float*)Cuda::malloc(p_particleCount * sizeof(float));
-	m_particles->m_mass = (float*)Cuda::malloc(p_particleCount * sizeof(float));
+
+	m_particles->m_accX = (float*)Cuda::unifiedMalloc(p_particleCount * sizeof(float));
+	m_particles->m_accY = (float*)Cuda::unifiedMalloc(p_particleCount * sizeof(float)); 
+	m_particles->m_accZ = (float*)Cuda::unifiedMalloc(p_particleCount * sizeof(float));
+	m_particles->m_velX = (float*)Cuda::unifiedMalloc(p_particleCount * sizeof(float));
+	m_particles->m_velY = (float*)Cuda::unifiedMalloc(p_particleCount * sizeof(float));
+	m_particles->m_velZ = (float*)Cuda::unifiedMalloc(p_particleCount * sizeof(float));
+	m_particles->m_posX = (float*)Cuda::unifiedMalloc(p_particleCount * sizeof(float));
+	m_particles->m_posY = (float*)Cuda::unifiedMalloc(p_particleCount * sizeof(float));
+	m_particles->m_posZ = (float*)Cuda::unifiedMalloc(p_particleCount * sizeof(float));
+	m_particles->m_mass = (float*)Cuda::unifiedMalloc(p_particleCount * sizeof(float));
+
 	int thread_count = 256;
 	int block_count = (m_particles->m_particleCount + thread_count - 1) / thread_count; //ensure more than enough blocks of 256 are dispatched
-	initUniverse<<<block_count, thread_count>>>(m_particles, p_radius);
+	initUniverse<<<block_count, thread_count>>>(m_particles, p_radius); //dispatch kernel
+	cudaDeviceSynchronize(); //wait for universe to init
 }
-
-
 
 __constant__ __device__ float epsilon_squared = 0.05;
 //__constant__ __device__ float G = 6.674e-11f;

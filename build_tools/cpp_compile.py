@@ -22,7 +22,7 @@ class CppCompiler:
 
 	FLAGS: list[str] = [
 		"-std=c++20",
-		f'-DGIT_HASH=\\"{getGitHash()}\\"',
+		f'-DGIT_HASH="{getGitHash()}"',
 		"-MMD",
 		"-MP",
 		"-g",

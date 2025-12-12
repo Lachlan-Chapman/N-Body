@@ -1,5 +1,5 @@
 #pragma once
-#include "graphics/Cuda.hpp"
+#include "math/vec.hpp"
 #include "simulation/particle.hpp"
 
 class universe {

@@ -7,34 +7,23 @@
 #include "graphics/Cuda.hpp"
 #include "graphics/OpenCuda.hpp"
 
-#include "observer/cameraFlight.hpp"
-#include "observer/cameraFPS.hpp"
-
-#include "shapes/octahedron.hpp"
-
 #include "math/vec.hpp"
+#include "benchmark/profiler.hpp"
+
+#include "observer/cameraFlight.hpp"
+
+#include "shapes/primitive.hpp"
 
 #include "simulation/universe.hpp"
+#include "simulation/octree.hpp"
 
 #include "text/glyph.hpp"
 
-#include "benchmark/profiler.hpp"
 
 #ifndef GIT_HASH
 #define GIT_HASH "default"
 #endif
 
-
-__global__ void mapPositions(vec3f *p_vbo, particles *p_particles) {
-	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-	if(idx >= p_particles->m_particleCount) { return; }
-
-	p_vbo[idx] = vec3f(
-		p_particles->m_posX[idx],
-		p_particles->m_posY[idx],
-		p_particles->m_posZ[idx]
-	);
-}
 
 int main(int argc, char** argv) {
 	
@@ -55,7 +44,18 @@ int main(int argc, char** argv) {
 
 
 	//particle sim
-	universe omega(16384, 128, 256); //omega is just name i used for all test objects
+	octree alpha;
+	universe omega(16384, 128, 256); //omega is just name i used for all test objects | bechmark obj
+	universe beta(16384, 128, 256); //test octree obj
+	std::cout << "boutta build octree\n";
+	{
+		scopeTimer buildTimer("Tree Build Timer", std::clog);
+		alpha.build(beta);
+	}
+	std::cout << "built octree\n";
+	return 1;
+	
+
 	int thread_count = 256;
 	int block_count = (omega.m_particles->m_particleCount + thread_count - 1) / thread_count; //ensure more than enough blocks of 256 are dispatched
 
@@ -131,11 +131,8 @@ int main(int argc, char** argv) {
 	
 	//set init conditions
 	cudaGraphicsResource *cuda_positions = OpenCuda::bindVBO(position_vbo);
-	OpenCuda::lockVBO(cuda_positions); //we lock since we about to change it
 	size_t position_size;
 	vec3f* positions = (vec3f*)OpenCuda::getVBO(&position_size, cuda_positions); //this is the ptr to the graphics subsystem vbo with out positions
-	mapPositions<<<block_count, thread_count>>>(positions, omega.m_particles); //the vbo after this contains the positions as vec3
-	OpenCuda::unlockVBO(cuda_positions);
 
 
 	//text

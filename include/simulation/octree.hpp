@@ -1,0 +1,38 @@
+#pragma once
+#include "math/vec.hpp"
+
+enum class nodeState : int {
+	UNINITIALIZED = 0, //is not yet been malloced
+	EMPTY = 1, //malloced by not used
+	LEAF = 2,
+	INTERNAL = 3
+};
+
+
+struct octreeNode {
+	//set for each node on creation
+	nodeState d_state = nodeState::UNINITIALIZED;
+	int d_childStart = -1;
+	int d_childCount = -1; //index into global node arr where children begin and total children
+	int d_particleIndex = -1; //index into global particle arr where the physics objects is
+
+	//root has this set, but all other nodes have this built after the tree is made
+	vec3f d_center, d_dimensions, d_halfDimensions; //need half widths for easy bound calcs later
+
+	//calculated after tree construction
+	vec3f d_massCenter;
+	float d_mass; //total combined mass of the node and half the node width IE "radius"
+
+};
+
+class octree {
+public:
+	void build(universe const &p_universe);
+private:
+	void createChildNodes(int p_childStart, vec3f p_parentCenter, vec3f p_parentHalfWidth); //allocates space in the m_nodes arr | sets position, width data
+	int leafToInternal(int p_nodeTarget); //takes a leaf, allocated 8 children, sets pos data and dimensions for each child, returns the particle which was in that leaf
+	bool insert(universe const &p_universe, int p_particleIndex, int p_rootIndex = 0); //default starts from root, traverses top down to find an empty leaf to store particle data | will expand tree as needed
+	
+	int m_nodeArrayPtr = 0; //ptr to the next free location in the global node arr
+	octreeNode *m_nodes = nullptr; //contigous 1d arr to store octree nodes
+};
