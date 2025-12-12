@@ -44,14 +44,10 @@ int main(int argc, char** argv) {
 
 
 	//particle sim
-	universe omega(16384, 128, 256); //omega is just name i used for all test objects | bechmark obj
+	universe omega(16384, 5, 256); //omega is just name i used for all test objects | bechmark obj
 	universe epsilon(16384, 128, 16);
-	{
-		octree alpha;
-		scopeTimer buildTimer("A | Tree Build Timer", std::clog);
-		alpha.build(epsilon);
-	}
-	return 1;
+	octree *alpha = (octree*)Cuda::unifiedMalloc(sizeof(octree));
+	//return 1;
 	
 
 	int thread_count = 256;
@@ -202,7 +198,7 @@ int main(int argc, char** argv) {
 	float universe_frequency = 1.0f / omega.m_frequency;
 	int frame_counter = 0; //render 10 frames, we use frames 4th -> 7th
 	while(!glfwWindowShouldClose(window)) {
-		if(frame_counter == 55) {break;}
+		//if(frame_counter == 55) {break;}
 		std::clog << "\nFrame ID: " << frame_counter++ << "\n";
 		scopeTimer frameTime("Frame Timer", std::clog);
 		float current_time = glfwGetTime();
@@ -243,6 +239,12 @@ int main(int argc, char** argv) {
 	
 			_cam->update();
 		}
+
+
+		{
+			scopeTimer treeBuild("Build Octree Timer", std::clog);
+			alpha->build(omega);
+		}
 		
 		{
 			scopeTimer dispatchTimer("Dispatch Simulation Timer", std::clog);
@@ -258,6 +260,7 @@ int main(int argc, char** argv) {
 			{
 				scopeTimer stepTimer("Simulation Step Timer", std::clog);
 				omega.step(
+					alpha,
 					positions,
 					step_count
 				);

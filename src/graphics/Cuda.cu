@@ -48,6 +48,8 @@ namespace Cuda {
 		return _ptr;
 	}
 
+	
+
 	void free(void *p_ptr) {
 		cudaFree(p_ptr);
 	}

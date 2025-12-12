@@ -34,14 +34,14 @@ struct octreeNode {
 class octree {
 public:
 	void build(universe const &p_universe);
-private:
-	
+	int m_maxDepth;
+	octreeNode *m_nodes = nullptr; //contigous 1d arr to store octree nodes
+private:	
 	void reset(universe const &p_universe);
 	void createChildNodes(int p_childStart, vec3f p_parentCenter, vec3f p_parentHalfWidth); //allocates space in the m_nodes arr | sets position, width data
 	int leafToInternal(int p_nodeTarget); //takes a leaf, allocated 8 children, sets pos data and dimensions for each child, returns the particle which was in that leaf
 	void leafToBedrock(int p_nodeTarget);
 	bool insert(universe const &p_universe, int p_particleIndex, int p_rootIndex = 0, int p_depth = 0); //default starts from root, traverses top down to find an empty leaf to store particle data | will expand tree as needed
 	void compute(universe const &p_universe);
-	int m_nodeArrayPtr = 0, m_maxDepth; //ptr to the next free location in the global node arr
-	octreeNode *m_nodes = nullptr; //contigous 1d arr to store octree nodes
+	int m_nodeArrayPtr; //ptr to the next free location in the global node arr
 };

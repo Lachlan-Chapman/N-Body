@@ -2,6 +2,7 @@
 #include <cstring> //memcpy
 #include <cmath>
 
+#include "graphics/Cuda.hpp"
 #include "simulation/universe.hpp"
 #include "simulation/octree.hpp"
 
@@ -51,7 +52,7 @@ void octree::leafToBedrock(int p_nodeTarget) {
 
 	node.d_particleBucketSize = 8; //init size being 8 | double each expansion
 	node.d_particleCount = 0;
-	node.d_particleBucket = new int[node.d_particleBucketSize];
+	node.d_particleBucket = (int*)Cuda::unifiedMalloc(sizeof(int) * node.d_particleBucketSize);
 	node.d_particleBucket[node.d_particleCount++] = node.d_particleIndex; //move the singular particle into the new bucket
 	node.d_particleIndex = -1;
 }
@@ -83,7 +84,7 @@ bool octree::insert(universe const &p_universe, int p_particleIndex, int p_rootI
 				if(node_data.d_particleCount >= node_data.d_particleBucketSize) { //then our bucket is full and we must expand
 					int *old_bucket = node_data.d_particleBucket;
 					node_data.d_particleBucketSize *= 2; //double space
-					node_data.d_particleBucket = new int[node_data.d_particleBucketSize];
+					node_data.d_particleBucket = (int*)Cuda::unifiedMalloc(sizeof(int) * node_data.d_particleBucketSize);
 
 					//copy old bucket over
 					std::memcpy(
@@ -91,7 +92,7 @@ bool octree::insert(universe const &p_universe, int p_particleIndex, int p_rootI
 						old_bucket,
 						sizeof(int) * node_data.d_particleCount
 					);
-					delete[] old_bucket;
+					Cuda::free(old_bucket);
 				}
 				node_data.d_particleBucket[node_data.d_particleCount++] = p_particleIndex; //stored particle into bucket
 				return true;
@@ -174,10 +175,10 @@ void octree::reset(universe const &p_universe) {
 		while(node_ptr > 0) { //delete all bedrock bucket allocations
 			--node_ptr;
 			if(m_nodes[node_ptr].d_particleBucket) {
-				delete[] m_nodes[node_ptr].d_particleBucket;
+				Cuda::free(m_nodes[node_ptr].d_particleBucket);
 			}
 		}
-		delete[] m_nodes; //delete all nodes
+		Cuda::free(m_nodes); //delete all nodes
 	}
 
 	//(8^(x-1) - 1) / 7 = node_count
@@ -189,10 +190,11 @@ void octree::reset(universe const &p_universe) {
 		std::ceil(
 			std::log((6.66 * p_universe.m_particles->m_particleCount) + 1) *
 			0.4808 //.4808 = 1/ln(8)
-		) + 1
+		) + 2
 	); 
 	unsigned int full_tree_count = (std::pow(8, m_maxDepth - 1) - 1.0) * 0.15; //~= (8^(maxDepth - 1) - 1) / 7
-	m_nodes = new octreeNode[full_tree_count];
+	std::cout << "allowing " << full_tree_count << " Nodes\n";
+	m_nodes = (octreeNode*)Cuda::unifiedMalloc(sizeof(octreeNode) * full_tree_count);
 	m_nodeArrayPtr = 0; //reset ptr
 }
 

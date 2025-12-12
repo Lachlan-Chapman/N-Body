@@ -4,6 +4,7 @@
 #include "graphics/Cuda.hpp"
 #include "simulation/particle.hpp"
 #include "simulation/universe.hpp"
+#include "simulation/octree.hpp"
 
 __global__ void initUniverse(particles *p_particles, float p_radius) {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -67,68 +68,103 @@ __constant__ __device__ float epsilon_squared = 0.05;
 //__constant__ __device__ float G = 6.674e-11f;
 __constant__ __device__ float G = 0.1; //1 for speed
 //note p_particles is soa
-__global__ void stepSimulation(particles *p_particles, vec3f *p_positionVBO, float p_dt, int p_stepCount) { //combined kernel that does accel, force, pos, copy data to pen gl buff
-	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-	if(idx >= p_particles->m_particleCount) { return; }
 
+
+//big enough for about > 9.8 billion points universe using 12 depth and 8 nodes
+#define MAX_STACK 92
+//distance threshold whether to approximate or not
+#define THETA 10
+
+__global__ void stepSimulation(octree *p_octree, particles *p_particles, vec3f *p_positionVBO, float p_dt, int p_stepCount) {
+	int pid = blockIdx.x * blockDim.x + threadIdx.x;
+	if(pid >= p_particles->m_particleCount) { return; }
+	
+	int stack[MAX_STACK]; 
+	float particle_mass = p_particles->m_mass[pid];
+	
 	for(int step_id = 0; step_id < p_stepCount; step_id++) {
-		vec3f my_pos(
-			p_particles->m_posX[idx],
-			p_particles->m_posY[idx],
-			p_particles->m_posZ[idx]
+		int stack_ptr = 0;
+		stack[stack_ptr++] = 0;
+	
+		vec3f particle_position(
+			p_particles->m_posX[pid],
+			p_particles->m_posY[pid],
+			p_particles->m_posZ[pid]
 		);
 
-
-		//calculate acceleration
 		vec3f acceleration(0.0f);
-		for(int particle_id = 0; particle_id < p_particles->m_particleCount; particle_id++) {
-			if(idx == particle_id) { continue; }
-			//force due to gravity
-			vec3f other_pos(
-				p_particles->m_posX[particle_id],
-				p_particles->m_posY[particle_id],
-				p_particles->m_posZ[particle_id]
-			);
+	
+		while(stack_ptr) { //we got nodes to search
+			int node_id = stack[--stack_ptr];
+			octreeNode &node = p_octree->m_nodes[node_id];
+			if(node.d_state == nodeState::EMPTY) { continue; }
+			if(node.d_state == nodeState::LEAF && node.d_particleIndex == pid) { continue; } //self intersection guard
+			
+			float current_mass = node.d_mass; //only changes if bedrock is self containing
+			vec3f current_com = node.d_massCenter; //INTERNAL, LEAF, BEDROCK (unaltered) will use these values
+			
+			if(node.d_state == nodeState::BEDROCK) { //adjust only if self containing
+				for(int child_id = 0; child_id < node.d_particleCount; child_id++) { //check if i am a child of that node
+					if(node.d_particleBucket[child_id] == pid) {
+						current_mass -= particle_mass;
+						if(current_mass <= 0) { continue; }
+						current_com = ((node.d_massCenter * node.d_mass) - (particle_position * particle_mass)) / current_mass;
+						break;
+					}
+				}
+			}
 
-			vec3f direction = other_pos - my_pos;
-			float dist_sqaured = direction.sqauredMagnitude();
-			float inv_dist = rsqrt(dist_sqaured);
-			inv_dist += epsilon_squared;
+			vec3f direction = current_com - particle_position; //common for all types, needed before internal check to see if we approximate or add to stack
+			float dist_squared = direction.sqauredMagnitude();
+
+			if(node.d_state == nodeState::INTERNAL) {
+				float node_size = node.d_dimensions.max(); //largest length of the AABB
+				if(dist_squared < (THETA*THETA * node_size*node_size)) { //checking the regular d / s < theta | theta is the limit on how many node_sizes away we are. if we are too close, then push to the stack
+					for(int child_id = 0; child_id < 8; child_id++) { //check if i am a child of that node
+						if(stack_ptr < MAX_STACK) {
+							stack[stack_ptr++] = node.d_childStart + child_id; //add node ids to now re check
+						}
+					}
+					continue;
+				}
+			}
+
+			//get accleartion, LEAF & INTERNAL nodes have values directly set, BEDROCK nodes if self containing will adjust the set values
+			float inv_dist = rsqrt(dist_squared + epsilon_squared);
 			float inv_dist_cubed = inv_dist * inv_dist * inv_dist;
-
-			float other_mass = p_particles->m_mass[particle_id];
-			acceleration += direction * (G * other_mass * inv_dist_cubed);
+			acceleration += direction * (G * current_mass * inv_dist_cubed);	
 		}
-		
-		p_particles->m_accX[idx] = acceleration[0];
-		p_particles->m_accY[idx] = acceleration[1];
-		p_particles->m_accZ[idx] = acceleration[2];
+		p_particles->m_accX[pid] = acceleration[0];
+		p_particles->m_accY[pid] = acceleration[1];
+		p_particles->m_accZ[pid] = acceleration[2];
 		
 		//calculate velocity
-		p_particles->m_velX[idx] += p_particles->m_accX[idx] * p_dt;
-		p_particles->m_velY[idx] += p_particles->m_accY[idx] * p_dt;
-		p_particles->m_velZ[idx] += p_particles->m_accZ[idx] * p_dt;
+		p_particles->m_velX[pid] += p_particles->m_accX[pid] * p_dt;
+		p_particles->m_velY[pid] += p_particles->m_accY[pid] * p_dt;
+		p_particles->m_velZ[pid] += p_particles->m_accZ[pid] * p_dt;
 
 		//calculate position
-		p_particles->m_posX[idx] += p_particles->m_velX[idx] * p_dt;
-		p_particles->m_posY[idx] += p_particles->m_velY[idx] * p_dt;
-		p_particles->m_posZ[idx] += p_particles->m_velZ[idx] * p_dt;
+		p_particles->m_posX[pid] += p_particles->m_velX[pid] * p_dt;
+		p_particles->m_posY[pid] += p_particles->m_velY[pid] * p_dt;
+		p_particles->m_posZ[pid] += p_particles->m_velZ[pid] * p_dt;
 	}
-	//copy final pos to opengl buffer
-	p_positionVBO[idx] = vec3f(
-		p_particles->m_posX[idx],
-		p_particles->m_posY[idx],
-		p_particles->m_posZ[idx]
+
+	//copy pos to vbo
+	p_positionVBO[pid] = vec3f(
+		p_particles->m_posX[pid],
+		p_particles->m_posY[pid],
+		p_particles->m_posZ[pid]
 	);
 
 }
 
-
-void universe::step(vec3f *p_positionVBO, int p_stepCount) {
+void universe::step(octree *p_octree, vec3f *p_positionVBO, int p_stepCount) {
+	
 	//using combined calculation kernel
 	int thread_count = 256;
 	int block_count = (m_particles->m_particleCount + thread_count - 1) / thread_count;
 	stepSimulation<<<block_count, thread_count>>>(
+		p_octree,
 		m_particles,
 		p_positionVBO,
 		1.0f / m_frequency,
