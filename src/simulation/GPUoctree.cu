@@ -21,15 +21,32 @@ GPUoctree::~GPUoctree() {
 __global__ void calculateMinMax(float *p_values, float *p_out, int p_count) {
 	int start_index = blockDim.x * blockIdx.x;
 	int block_size = min(blockDim.x, p_count - start_index);
-	//int thread_id = threadIdx.x;
+	int thread_id = threadIdx.x;
 
-	
-	//at this point here, we have the min @ start_index and max @ end_index of the values [start_index, end_index]. we do not have a global min max yet
+	for (int stride = 1; stride < block_size; stride <<= 1) {
 
-	int out_start = blockIdx.x * 2;
-	p_out[out_start] = p_values[start_index];
-	if(block_size > 1) {
-		p_out[out_start + 1] = p_values[start_index + block_size - 1];
+		unsigned int local_base = thread_id * 2 * stride;
+
+		if (local_base + stride < block_size) {
+			int lhs = start_index + local_base;
+			int rhs = lhs + stride;
+
+			float min_val = fminf(p_values[lhs], p_values[rhs]);
+			float max_val = fmaxf(p_values[lhs], p_values[rhs]);
+
+			p_values[lhs] = min_val;
+			p_values[rhs] = max_val;
+		}
+
+		__syncthreads(); //MUST be unconditional
+	}
+
+	//write packed min/max for this block
+	int out_index = blockIdx.x * 2;
+	p_out[out_index] = p_values[start_index];
+
+	if (block_size > 1) {
+		p_out[out_index + 1] = p_values[start_index + block_size - 1];
 	}
 }
 
