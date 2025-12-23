@@ -13,6 +13,8 @@ camera *_cam = new cameraFlight(
 	384.0f
 );
 
+theta = 0.5
+
 e8a8715 - base
 	Frame Timer: 22316.4 us
 	Frame Timer: 54693.1 us
@@ -29,13 +31,68 @@ e8a8715 - base
 
 78d884d - essentially a new base | camera init to view all particles, using instancing over geometry shader
 	Frame ID: 50
+	Input Timer: 20.16 us
+	Simulation Step Timer: 15.221 us
+	Dispatch Simulation Timer: 869793 us
+	Render Timer: 869793 us
 	Frame Timer: 869960 us
 
 	Frame ID: 51
+	Input Timer: 23.77 us
+	Simulation Step Timer: 19.291 us
+	Dispatch Simulation Timer: 140.922 us
+	Render Timer: 348852 us
 	Frame Timer: 349048 us
 
 	Frame ID: 52
+	Input Timer: 36.921 us
+	Simulation Step Timer: 17.95 us
+	Dispatch Simulation Timer: 132.681 us
+	Render Timer: 1.06987e+06 us
 	Frame Timer: 1.07021e+06 us
 
 	Frame ID: 53
+	Input Timer: 20.58 us
+	Simulation Step Timer: 18.11 us
+	Dispatch Simulation Timer: 141.592 us
+	Render Timer: 430190 us
 	Frame Timer: 430460 us
+
+ee865f7 - barnes hut creation and traversal.
+when the sim falls behind the frame rate, the steps required per frame increases trying to catch up further runining frame times and so on.
+this is really the first stable test for this benchmark values
+	Frame ID: 50
+	Input Timer: 26.93 us
+	Build Octree Timer: 9308.01 us
+	All Simulation Step Time: 4866.71 us
+	Single Simulation Step Time: 4866.64us
+	Dispatch Simulation Timer: 4944.93 us
+	Render Timer: 53.11 us
+	Frame Timer: 14350.6 us
+
+	Frame ID: 51
+	Input Timer: 19.36 us
+	Build Octree Timer: 8883.97 us
+	All Simulation Step Time: 4019.76 us
+	Single Simulation Step Time: 2009.84us
+	Dispatch Simulation Timer: 4102.15 us
+	Render Timer: 51.73 us
+	Frame Timer: 13076.3 us
+
+	Frame ID: 52
+	Input Timer: 19.8 us
+	Build Octree Timer: 9571.34 us
+	All Simulation Step Time: 3652.96 us
+	Single Simulation Step Time: 1826.37us
+	Dispatch Simulation Timer: 3745.44 us
+	Render Timer: 902.274 us
+	Frame Timer: 14271.8 us
+
+	Frame ID: 53
+	Input Timer: 22.58 us
+	Build Octree Timer: 8665.14 us
+	All Simulation Step Time: 3618.52 us
+	Single Simulation Step Time: 1809.21us
+	Dispatch Simulation Timer: 3702.75 us
+	Render Timer: 59.091 us
+	Frame Timer: 12471.1 us

@@ -1,5 +1,6 @@
 #pragma once
 #include "math/vec.hpp"
+#include "simulation/universe.hpp"
 
 enum class nodeState : int {
 	UNINITIALIZED = 0, //is not yet been malloced
@@ -44,4 +45,18 @@ private:
 	bool insert(universe const &p_universe, int p_particleIndex, int p_rootIndex = 0, int p_depth = 0); //default starts from root, traverses top down to find an empty leaf to store particle data | will expand tree as needed
 	void compute(universe const &p_universe);
 	int m_nodeArrayPtr; //ptr to the next free location in the global node arr
+};
+
+class GPUoctree {
+public:
+	GPUoctree() = delete;
+	GPUoctree(universe const &p_universe);
+	~GPUoctree();
+	void runTest();
+	void build(unsigned int p_axisBitCount);
+	void AABB();
+private:
+	uint32_t *m_keyBuffer = nullptr;
+	float *m_positionCopies[4];
+	universe const &m_universe;
 };

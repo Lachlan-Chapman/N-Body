@@ -26,7 +26,6 @@
 
 
 int main(int argc, char** argv) {
-	
 	GLFWwindow *window = OpenGL::createContext(
 		3840,
 		2160,
@@ -46,7 +45,9 @@ int main(int argc, char** argv) {
 	//particle sim
 	universe omega(16384, 128, 256); //omega is just name i used for all test objects | bechmark obj
 	octree *alpha = (octree*)Cuda::unifiedMalloc(sizeof(octree));
-
+	GPUoctree zeta(omega);
+	zeta.build(10);
+	
 	int thread_count = 256;
 	int block_count = (omega.m_particles->m_particleCount + thread_count - 1) / thread_count; //ensure more than enough blocks of 256 are dispatched
 

@@ -44,7 +44,7 @@ __global__ void initUniverse(particles *p_particles, float p_radius) {
 
 universe::universe(size_t p_particleCount, unsigned int p_frequency, float p_radius) { //struct of arrays init
 	m_frequency = p_frequency;
-	m_particles = new particles;
+	m_particles = new particles; //the soa container
 	m_particles->m_particleCount = p_particleCount;
 
 	m_particles->m_accX = (float*)Cuda::unifiedMalloc(p_particleCount * sizeof(float));
@@ -73,7 +73,7 @@ __constant__ __device__ float G = 0.1; //1 for speed
 //big enough for about > 9.8 billion points universe using 12 depth and 8 nodes
 #define MAX_STACK 92
 //distance threshold whether to approximate or not
-#define THETA 1
+#define THETA 0.5
 
 __global__ void stepSimulation(octree *p_octree, particles *p_particles, vec3f *p_positionVBO, float p_dt, int p_stepCount) {
 	int pid = blockIdx.x * blockDim.x + threadIdx.x;

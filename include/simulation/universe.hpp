@@ -9,4 +9,5 @@ public:
 	void step(octree *p_octree, vec3f *p_positionVBO, int stepCount = 1);
 	particles *m_particles;
 	float m_frequency;
+	vec3f m_minCorner, m_maxCorner;
 };

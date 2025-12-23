@@ -38,6 +38,15 @@ namespace Cuda {
 		return _ptr;
 	}
 
+	void memcpy(void* p_copy, void* p_original, unsigned int p_byteCount) {
+		cudaMemcpy(
+			p_copy,
+			p_original,
+			p_byteCount,
+			cudaMemcpyDeviceToDevice
+		);
+	}
+
 	void* unifiedMalloc(size_t p_size) {
 		void *_ptr;
 		cudaError_t _err = cudaMallocManaged(&_ptr, p_size);
